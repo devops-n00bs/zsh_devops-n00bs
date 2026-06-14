@@ -6,30 +6,22 @@
 add_newline = true
 
 # Use custom format
-format = "$directory$os$git_branch$git_status$git_state$character"
+format = "$directory$git_branch$git_status$git_state$character"
 
-# OS Module
+# OS Module (Disabled for super minimal look)
 [os]
-disabled = false
-style = "bold fg:208"
+disabled = true
 
-[os.symbols]
-Windows = "󰖳 "
-Ubuntu = "󰕈 "
-Debian = "󰣚 "
-Macos = "󰀵 "
-Linux = "󰌽 "
-
-# Character (Prompt Symbol)
+# Character (Standard ASCII, no special font required)
 [character]
-success_symbol = "[❯](bold green) "
-error_symbol = "[❯](bold red) "
-vicmd_symbol = "[❮](bold yellow) "
+success_symbol = "[>](bold green) "
+error_symbol = "[>](bold red) "
+vicmd_symbol = "[<](bold yellow) "
 
 # Directory Settings
 [directory]
 style = "bold cyan"
-read_only = " 󰌾"
+read_only = " [RO]"
 truncation_length = 5
 truncate_to_repo = false
 truncation_symbol = "../"
@@ -37,7 +29,7 @@ format = "[$path]($style) "
 
 # Git Configuration
 [git_branch]
-symbol = " "
+symbol = "git:"
 style = "bold magenta"
 format = "[$symbol$branch]($style) "
 

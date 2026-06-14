@@ -9,7 +9,7 @@
 set -euo pipefail
 
 # Version
-VERSION="v1.0.5"
+VERSION="v1.0.7"
 
 # Colors for output
 RED='\033[0;31m'
@@ -88,7 +88,22 @@ do_install() {
     # 2. Install Starship Prompt
     if ! command -v starship &> /dev/null; then
         info "Menginstal Starship Prompt..."
-        curl -sS https://starship.rs/install.sh | sh -s -- --yes
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            if command -v brew &> /dev/null; then
+                info "Menginstal via Homebrew..."
+                brew install starship
+            else
+                warn "Homebrew tidak ditemukan. Menggunakan installer official (mungkin membutuhkan password sudo)..."
+                curl -sS https://starship.rs/install.sh | sudo sh -s -- --yes
+            fi
+        else
+            # Linux / WSL
+            SUDO=""
+            if [ "$(id -u)" -ne 0 ]; then
+                SUDO="sudo"
+            fi
+            curl -sS https://starship.rs/install.sh | $SUDO sh -s -- --yes
+        fi
         success "Starship berhasil diinstal."
     else
         info "Starship sudah terinstal."
@@ -247,30 +262,22 @@ EOF
 add_newline = true
 
 # Use custom format
-format = "$directory$os$git_branch$git_status$git_state$character"
+format = "$directory$git_branch$git_status$git_state$character"
 
-# OS Module
+# OS Module (Disabled for super minimal look)
 [os]
-disabled = false
-style = "bold fg:208"
+disabled = true
 
-[os.symbols]
-Windows = "󰖳 "
-Ubuntu = "󰕈 "
-Debian = "󰣚 "
-Macos = "󰀵 "
-Linux = "󰌽 "
-
-# Character (Prompt Symbol)
+# Character (Standard ASCII, no special font required)
 [character]
-success_symbol = "[❯](bold green) "
-error_symbol = "[❯](bold red) "
-vicmd_symbol = "[❮](bold yellow) "
+success_symbol = "[>](bold green) "
+error_symbol = "[>](bold red) "
+vicmd_symbol = "[<](bold yellow) "
 
 # Directory Settings
 [directory]
 style = "bold cyan"
-read_only = " 󰌾"
+read_only = " [RO]"
 truncation_length = 5
 truncate_to_repo = false
 truncation_symbol = "../"
@@ -278,7 +285,7 @@ format = "[$path]($style) "
 
 # Git Configuration
 [git_branch]
-symbol = " "
+symbol = "git:"
 style = "bold magenta"
 format = "[$symbol$branch]($style) "
 
