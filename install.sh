@@ -98,6 +98,10 @@ EOF"
                 success "Neovim configured for 'root' user."
             fi
             success "Vim/Neovim configuration applied to 'root' user!"
+        elif [ "$module" = "tmux" ]; then
+            # 1. Tmux config to root
+            $SUDO cp "${HOME}/.tmux.conf" /root/.tmux.conf
+            success "Tmux configuration applied to 'root' user!"
         fi
     fi
 }
@@ -769,8 +773,154 @@ EOF
 do_install_tmux() {
     echo ""
     info "=== STARTING TMUX INSTALLATION ==="
-    warn "Tmux configuration is coming soon!"
-    echo ""
+
+    # 1. Detect and install Tmux if missing
+    if ! command -v tmux &> /dev/null; then
+        info "Tmux is not installed. Installing Tmux..."
+        SUDO=""
+        if [ "$(id -u)" -ne 0 ]; then
+            SUDO="sudo"
+        fi
+        
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            if command -v brew &> /dev/null; then
+                brew install tmux
+            else
+                warn "Homebrew not found. Please install Tmux manually."
+            fi
+        elif [ -f /etc/debian_version ]; then
+            $SUDO apt-get update
+            $SUDO apt-get install -y tmux
+        elif [ -f /etc/redhat-release ] || [ -f /etc/system-release ]; then
+            if command -v dnf &> /dev/null; then
+                $SUDO dnf install -y tmux
+            else
+                $SUDO yum install -y tmux
+            fi
+        elif [ -f /etc/arch-release ]; then
+            $SUDO pacman -S --noconfirm tmux
+        else
+            warn "Could not install Tmux automatically. Please install it manually."
+        fi
+    else
+        info "Tmux is already installed."
+    fi
+
+    # 2. Setup .tmux.conf
+    if [ -f "${HOME}/.tmux.conf" ] && [ ! -f "${HOME}/.tmux.conf.bak" ]; then
+        warn "Existing ~/.tmux.conf found. Creating backup at ~/.tmux.conf.bak"
+        mv "${HOME}/.tmux.conf" "${HOME}/.tmux.conf.bak"
+    fi
+
+    if [ "$IS_LOCAL" = true ]; then
+        cp "${SCRIPT_DIR}/tmux.conf" "${HOME}/.tmux.conf"
+    else
+        info "Writing ~/.tmux.conf configuration..."
+        cat << 'EOF' > "${HOME}/.tmux.conf"
+# ==============================================================================
+# UNIVERSAL TMUX CONFIGURATION (Premium, Fast, and Clean)
+# Compatible with macOS, Linux, and Windows WSL
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. General & Prefix Settings
+# ------------------------------------------------------------------------------
+# Change prefix from Ctrl+B to Ctrl+A
+unbind C-b
+set -g prefix C-a
+bind C-a send-prefix
+
+# Start window and pane numbering at 1 (more intuitive)
+set -g base-index 1
+setw -g pane-base-index 1
+
+# Automatically rename windows based on active process
+setw -g automatic-rename on
+set -g renumber-windows on
+
+# Increase scrollback history limit (default is 2000)
+set -g history-limit 10000
+
+# Reduce delay time for esc key (improves Vim responsiveness)
+set -sg escape-time 0
+
+# Enable terminal colors
+set -g default-terminal "screen-256color"
+set -ga terminal-overrides ",xterm-256color:Tc"
+
+# ------------------------------------------------------------------------------
+# 2. Mouse & Clipboard Support
+# ------------------------------------------------------------------------------
+# Enable mouse mode (scrolling, clicking, resizing panes)
+set -g mouse on
+
+# Use system clipboard (requires xclip on Linux/WSL)
+set -g set-clipboard on
+
+# ------------------------------------------------------------------------------
+# 3. Custom Key Bindings
+# ------------------------------------------------------------------------------
+# Reload configuration file easily
+bind r source-file ~/.tmux.conf \; display-message "Tmux configuration reloaded!"
+
+# Split window vertically using | (in current path)
+bind | split-window -h -c "#{pane_current_path}"
+unbind %
+
+# Split window horizontally using - (in current path)
+bind - split-window -v -c "#{pane_current_path}"
+unbind '"'
+
+# Navigate panes using Ctrl + Arrow keys (without prefix!)
+bind -n C-Left select-pane -L
+bind -n C-Right select-pane -R
+bind -n C-Up select-pane -U
+bind -n C-Down select-pane -D
+
+# Resize panes easily using prefix + Shift + Arrow keys
+bind -r H resize-pane -L 5
+bind -r L resize-pane -R 5
+bind -r K resize-pane -U 5
+bind -r J resize-pane -D 5
+
+# ------------------------------------------------------------------------------
+# 4. Premium Theme & Status Bar (Starship Match)
+# ------------------------------------------------------------------------------
+# Status bar refresh rate
+set -g status-interval 5
+
+# Status bar general styling
+set -g status-position bottom
+set -g status-style "bg=#1C1C1C,fg=#FFFFFF"
+
+# Status Left (Session Info)
+set -g status-left-length 30
+set -g status-left "#[bg=#005F87,fg=#FFFFFF,bold] [Session: #S] #[bg=default,fg=default] "
+
+# Status Right (Clock & Date)
+set -g status-right-length 50
+set -g status-right "#[fg=#585858] %d-%b-%y #[fg=#FFFFFF,bold] %H:%M "
+
+# Active window formatting
+set -g window-status-current-format "#[bg=#0087AF,fg=#FFFFFF,bold] #I:#W#F "
+
+# Inactive window formatting
+set -g window-status-format "#[fg=#8A8A8A] #I:#W "
+
+# Pane borders color
+set -g pane-border-style "fg=#3A3A3A"
+set -g pane-active-border-style "fg=#0087AF"
+
+# Message bar coloring
+set -g message-style "bg=#005F87,fg=#FFFFFF,bold"
+EOF
+    fi
+    success "Tmux configuration successfully applied!"
+
+    # 3. Ask to apply to root
+    check_and_apply_to_root "tmux"
+
+    echo -e "\n${GREEN}Tmux configuration complete!${NC}\n"
 }
 
 # Function: Install or Update All Configuration

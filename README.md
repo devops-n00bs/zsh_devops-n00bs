@@ -51,13 +51,11 @@ curl -fsSL https://raw.githubusercontent.com/devops-n00bs/zsh_devops-n00bs/main/
 ```
 
 Select **Option `5`** (Uninstall). The script will automatically:
-1. Delete custom configurations and cache files (`~/.zshrc`, `~/.config/starship.toml`, `~/.vimrc`, `~/.config/nvim/init.vim`).
-2. Revert configuration backups.
-3. Remove the installed Starship binary.
-4. Clean Zsh command history (`~/.zsh_history`).
-5. Revert your default system shell back to `bash` (on Linux/WSL).
-6. Remove Zsh auto-forward redirect hook from `~/.bashrc` (on WSL).
-7. Automatically exit.
+1. Present an interactive status dashboard of all modules across user and root.
+2. Allow modular uninstallation or complete reset.
+3. Restore previous backup configurations (`.bak` files) automatically.
+4. Clean cache and history files.
+5. Revert default shells and environment hooks.
 
 ---
 
@@ -68,7 +66,8 @@ zsh_devops-n00bs/
 ├── install.sh         # Interactive setup manager (installation & cleanup)
 ├── zshrc              # Source Zsh configuration file
 ├── starship.toml      # Source Starship prompt layout
-└── vimrc              # Source Vim configuration file
+├── vimrc              # Source Vim configuration file
+└── tmux.conf          # Source Tmux configuration file
 ```
 
 ---
@@ -121,5 +120,18 @@ Our universal Vim setup comes with highly optimized key bindings (the `<Leader>`
     *   `Ctrl` + **Arrow keys** : Move cursor between split panes seamlessly
 *   **Mouse Support**: Drag to resize splits, click to place the cursor, and use the scroll wheel natively.
 *   **System Clipboard**: Integrates natively with the system clipboard for copy/paste where supported.
+
+### Tmux Shortcuts & Features
+Our universal Tmux setup is configured with the highly-accessible prefix **`Ctrl + A`**:
+*   **Split Windows**:
+    *   `Ctrl + A` then `|` : Split pane vertically (side-by-side)
+    *   `Ctrl + A` then `-` : Split pane horizontally (top-and-bottom)
+*   **Pane Navigation**:
+    *   `Ctrl` + **Arrow keys** : Move cursor between split panes directly (**without needing the prefix key!**)
+*   **Resize Panes**:
+    *   `Ctrl + A` then `Shift` + **Arrow keys** : Resize the current pane dynamically
+*   **Mouse Support**: Full scroll wheel support to browse terminal history, click to select panes, and drag split lines to resize windows.
+*   **Reload Config**:
+    *   `Ctrl + A` then `r` : Reload configuration on-the-fly without restarting sessions
 
 
