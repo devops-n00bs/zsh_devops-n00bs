@@ -9,7 +9,7 @@
 set -euo pipefail
 
 # Version
-VERSION="v1.0.4"
+VERSION="v1.0.5"
 
 # Colors for output
 RED='\033[0;31m'
@@ -247,25 +247,12 @@ EOF
 add_newline = true
 
 # Use custom format
-format = """
-$os\
-$directory\
-$git_branch\
-$git_status\
-$git_state\
-$fill\
-$cmd_duration $jobs $time
-$character"""
-
-# Replace the "blank" right-side prompt with a clean divider
-[fill]
-symbol = " "
-disabled = false
+format = "$directory$os$git_branch$git_status$git_state$character"
 
 # OS Module
 [os]
 disabled = false
-style = "bold white"
+style = "bold fg:208"
 
 [os.symbols]
 Windows = "󰖳 "
@@ -276,9 +263,9 @@ Linux = "󰌽 "
 
 # Character (Prompt Symbol)
 [character]
-success_symbol = "[❯](bold green)"
-error_symbol = "[❯](bold red)"
-vicmd_symbol = "[❮](bold yellow)"
+success_symbol = "[❯](bold green) "
+error_symbol = "[❯](bold red) "
+vicmd_symbol = "[❮](bold yellow) "
 
 # Directory Settings
 [directory]
@@ -287,13 +274,13 @@ read_only = " 󰌾"
 truncation_length = 5
 truncate_to_repo = false
 truncation_symbol = "../"
-format = "in [$path]($style)[$read_only]($read_only_style) "
+format = "[$path]($style) "
 
 # Git Configuration
 [git_branch]
 symbol = " "
 style = "bold magenta"
-format = "on [$symbol$branch]($style) "
+format = "[$symbol$branch]($style) "
 
 [git_status]
 style = "red"
