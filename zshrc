@@ -64,6 +64,8 @@ if [[ -f "${ZSH_PLUGIN_DIR}/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; the
     source "${ZSH_PLUGIN_DIR}/zsh-autosuggestions/zsh-autosuggestions.zsh"
     # Customize autosuggestion color (sleek dark gray)
     ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=8"
+    # Accept suggestion with Ctrl + Space (Right Arrow still works by default)
+    bindkey '^ ' autosuggest-accept
 fi
 
 # Load zsh-syntax-highlighting
@@ -87,6 +89,9 @@ fi
 # Default general aliases
 alias grep="grep --color=auto"
 alias reload="exec zsh"
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
 
 # Smart Auto-Aliases (Check for modern CLI replacements)
 if command -v batcat &> /dev/null; then
