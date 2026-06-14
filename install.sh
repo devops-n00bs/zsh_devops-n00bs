@@ -9,7 +9,7 @@
 set -euo pipefail
 
 # Version
-VERSION="v1.0.7"
+VERSION="v1.0.8"
 
 # Colors for output
 RED='\033[0;31m'
@@ -262,7 +262,9 @@ EOF
 add_newline = true
 
 # Use custom format
-format = "$directory$git_branch$git_status$git_state$character"
+format = """
+$directory$git_branch$git_status$git_state
+$character"""
 
 # OS Module (Disabled for super minimal look)
 [os]
