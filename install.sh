@@ -425,20 +425,29 @@ EOF
 
     success "Zsh and Starship configurations successfully applied!"
 
-    # 5. Suggest shell change
+    # 5. Set default shell to Zsh
     CURRENT_SHELL=$(basename "$SHELL")
     if [ "$CURRENT_SHELL" != "zsh" ]; then
-        warn "Current shell is ${CURRENT_SHELL}."
-        echo -e "${YELLOW}Run the following command to change your default shell to Zsh:${NC}"
-        echo -e "  chsh -s \$(which zsh)"
+        info "Attempting to change your default shell to Zsh..."
+        if command -v chsh &> /dev/null; then
+            # Run chsh (may ask for user's password)
+            if chsh -s "$(which zsh)" < /dev/tty; then
+                success "Default shell successfully changed to Zsh."
+            else
+                warn "Could not change default shell via chsh automatically."
+            fi
+        else
+            warn "chsh command not found. Please change default shell manually."
+        fi
     fi
 
-    if [ "$IS_WSL" = true ]; then
-        info "WSL environment detected. Ensuring Zsh auto-launches on startup..."
+    # Fallback auto-launch hook for all Linux/WSL environments
+    if [[ "$OSTYPE" != "darwin"* ]]; then
+        info "Ensuring Zsh auto-launches in bash sessions..."
         BASHRC="${HOME}/.bashrc"
         if [ -f "$BASHRC" ]; then
-            if ! grep -q "Auto-launch Zsh in WSL" "$BASHRC"; then
-                echo -e "\n# Auto-launch Zsh in WSL sessions\nif [ -t 1 ] && command -v zsh &> /dev/null; then\n    exec zsh\nfi" >> "$BASHRC"
+            if ! grep -q "Auto-launch Zsh" "$BASHRC"; then
+                echo -e "\n# Auto-launch Zsh on login\nif [ -t 1 ] && command -v zsh &> /dev/null; then\n    exec zsh\nfi" >> "$BASHRC"
                 success "Added Zsh auto-forward to ~/.bashrc"
             else
                 info "Zsh auto-forward already exists in ~/.bashrc."
@@ -784,12 +793,14 @@ do_uninstall() {
         fi
     fi
 
-    # 9. Clean up WSL auto-forward from ~/.bashrc if present
+    # 9. Clean up Zsh auto-forward from ~/.bashrc if present
     BASHRC="${HOME}/.bashrc"
-    if [ -f "$BASHRC" ] && grep -q "Auto-launch Zsh in WSL" "$BASHRC"; then
-        info "Removing Zsh auto-forward from ~/.bashrc..."
-        sed -i '/Auto-launch Zsh in WSL/,/fi/d' "$BASHRC"
-        success "Removed Zsh auto-forward from ~/.bashrc"
+    if [ -f "$BASHRC" ]; then
+        if grep -q "Auto-launch Zsh" "$BASHRC"; then
+            info "Removing Zsh auto-forward from ~/.bashrc..."
+            sed -i '/Auto-launch Zsh/,/fi/d' "$BASHRC"
+            success "Removed Zsh auto-forward from ~/.bashrc"
+        fi
     fi
 
     echo -e "\n${GREEN}Cleanup complete! All custom configurations, binaries, and caches have been fully removed.${NC}"
