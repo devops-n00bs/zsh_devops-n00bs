@@ -6,6 +6,15 @@ Unlike other configurations, this setup does not require downloading Nerd Fonts 
 
 ---
 
+## 📖 Detailed Module Documentation
+
+For detailed configurations, keybindings, keyboard flows, and troubleshooting of each module, check the dedicated documentation files:
+- 🐚 **[Zsh & Starship Guide](docs/zsh.md)**
+- 📝 **[Vim & Neovim Guide](docs/vim.md)**
+- 🗂️ **[Tmux Configuration Guide](docs/tmux.md)**
+
+---
+
 ## Key Features
 
 *   **Zero-Font Required**: Optimized layout using standard characters. Perfect for VPS servers and fresh client environments where custom fonts aren't installed.
