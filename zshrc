@@ -64,8 +64,13 @@ if [[ -f "${ZSH_PLUGIN_DIR}/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; the
     source "${ZSH_PLUGIN_DIR}/zsh-autosuggestions/zsh-autosuggestions.zsh"
     # Customize autosuggestion color (sleek dark gray)
     ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=8"
-    # Accept suggestion with Ctrl + Space (Right Arrow still works by default)
+    # Key bindings for autosuggestions:
+    # 1. Right Arrow (default): Accepts the full suggestion when cursor is at the end of the line
+    # 2. Ctrl + Space: Accept full suggestion immediately
     bindkey '^ ' autosuggest-accept
+    # 3. Ctrl + Right Arrow: Accept suggestion word-by-word
+    bindkey '^[[1;5C' forward-word
+    bindkey '^[[1;5D' backward-word
 fi
 
 # Load zsh-syntax-highlighting
