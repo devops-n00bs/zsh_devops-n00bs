@@ -89,3 +89,10 @@ Your prompt displays:
 When viewing long file contents or running git logs/diffs, Zsh will automatically paginate the output using a pager (`less`).
 *   **To exit and return to prompt**: Press the **`q`** key on your keyboard.
 *   **To navigate**: Use the **Up/Down Arrow keys** or **Spacebar** (to scroll down a page).
+
+### Auto-Suggestions & Word Navigation Shortcuts
+Optimize your typing flow with these built-in shortcuts:
+*   **Accept Full Suggestion**: Press the **Right Arrow** key (when cursor is at the end of the line) or **Ctrl + Space** (from anywhere on the line).
+*   **Accept Word-by-Word**: Press **Ctrl + Right Arrow** to accept the suggested command one word at a time.
+*   **Navigate Word-by-Word**: Press **Ctrl + Left Arrow** or **Ctrl + Right Arrow** to skip through words quickly when editing commands.
+
