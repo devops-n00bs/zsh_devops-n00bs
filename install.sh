@@ -705,40 +705,61 @@ do_install_all() {
 do_uninstall() {
     echo ""
     info "=== STARTING SYSTEM CLEANUP (UNINSTALL) ==="
-    
-    # 1. Remove Zsh configuration and backups
-    info "Removing Zsh configuration files..."
-    for file in "${HOME}/.zshrc" "${HOME}/.zshrc.bak"; do
-        if [ -f "$file" ]; then
+
+    # Helper function to restore backup or safely delete config
+    restore_backup() {
+        local file=$1
+        local backup="${file}.bak"
+        if [ -f "$backup" ]; then
+            info "Restoring backup for $(basename "$file")..."
+            mv -f "$backup" "$file"
+            success "Restored $file from backup."
+        elif [ -f "$file" ]; then
+            info "Removing $file..."
             rm -f "$file"
             success "Removed $file"
         fi
-    done
+    }
 
-    # 2. Remove Starship configuration and backups
-    info "Removing Starship configurations..."
-    for file in "${HOME}/.config/starship.toml" "${HOME}/.config/starship.toml.bak"; do
-        if [ -f "$file" ]; then
-            rm -f "$file"
-            success "Removed $file"
-        fi
-    done
+    # 1. Restore Zsh configuration
+    info "Processing Zsh configuration..."
+    restore_backup "${HOME}/.zshrc"
 
-    # 3. Clean up plugins and entire .zsh directory
+    # 2. Restore Starship configuration
+    info "Processing Starship configuration..."
+    restore_backup "${HOME}/.config/starship.toml"
+
+    # 3. Restore Vim configurations
+    info "Processing Vim configuration..."
+    restore_backup "${HOME}/.vimrc"
+
+    # 4. Restore Neovim configuration
+    info "Processing Neovim configuration..."
+    restore_backup "${HOME}/.config/nvim/init.vim"
+    if [ -d "${HOME}/.config/nvim" ] && [ -z "$(ls -A "${HOME}/.config/nvim" 2>/dev/null)" ]; then
+        rmdir "${HOME}/.config/nvim"
+        success "Removed empty folder ~/.config/nvim"
+    fi
+
+    # 5. Restore Tmux configuration
+    info "Processing Tmux configuration..."
+    restore_backup "${HOME}/.tmux.conf"
+
+    # 6. Clean up plugins and entire .zsh directory
     info "Cleaning up Zsh plugins folder..."
     if [ -d "${HOME}/.zsh" ]; then
         rm -rf "${HOME}/.zsh"
         success "Removed folder ~/.zsh"
     fi
 
-    # 4. Clean up cache and history
+    # 7. Clean up cache and history
     info "Cleaning up terminal caches and history..."
     rm -f "${HOME}/.zcompdump"*
     rm -f "${HOME}/.zsh_history"
     rm -rf "${HOME}/.cache/starship"
-    success "Zcompdump cache, Starship cache, and Zsh history (~/.zsh_history) successfully cleared."
+    success "Zcompdump cache, Starship cache, and Zsh history (~/.zsh_history) cleared."
 
-    # 5. Remove Starship binary if installed
+    # 8. Remove Starship binary if installed
     if command -v starship &> /dev/null; then
         STARSHIP_PATH=$(which starship)
         info "Removing Starship binary at $STARSHIP_PATH..."
@@ -750,29 +771,7 @@ do_uninstall() {
         success "Starship binary successfully removed."
     fi
 
-    # 6. Remove Vim configurations and backups
-    info "Removing Vim configurations..."
-    for file in "${HOME}/.vimrc" "${HOME}/.vimrc.bak"; do
-        if [ -f "$file" ]; then
-            rm -f "$file"
-            success "Removed $file"
-        fi
-    done
-
-    # 7. Remove Neovim configuration link and backups
-    info "Removing Neovim configuration settings..."
-    for file in "${HOME}/.config/nvim/init.vim" "${HOME}/.config/nvim/init.vim.bak"; do
-        if [ -f "$file" ]; then
-            rm -f "$file"
-            success "Removed $file"
-        fi
-    done
-    if [ -d "${HOME}/.config/nvim" ] && [ -z "$(ls -A "${HOME}/.config/nvim" 2>/dev/null)" ]; then
-        rmdir "${HOME}/.config/nvim"
-        success "Removed empty folder ~/.config/nvim"
-    fi
-
-    # 8. Automatically try to revert default shell to bash
+    # 9. Automatically try to revert default shell to bash
     CURRENT_SHELL=$(basename "$SHELL")
     if [[ "$OSTYPE" == "darwin"* ]]; then
         info "On macOS, the default shell is Zsh. No need to revert to bash."
@@ -793,7 +792,7 @@ do_uninstall() {
         fi
     fi
 
-    # 9. Clean up Zsh auto-forward from ~/.bashrc if present
+    # 10. Clean up Zsh auto-forward from ~/.bashrc if present
     BASHRC="${HOME}/.bashrc"
     if [ -f "$BASHRC" ]; then
         if grep -q "Auto-launch Zsh" "$BASHRC"; then
@@ -803,7 +802,7 @@ do_uninstall() {
         fi
     fi
 
-    echo -e "\n${GREEN}Cleanup complete! All custom configurations, binaries, and caches have been fully removed.${NC}"
+    echo -e "\n${GREEN}Cleanup complete! All custom configurations, binaries, and caches have been fully processed.${NC}"
     echo -e "${YELLOW}Please restart your terminal or open a new session to see changes.${NC}\n"
     exit 0
 }
