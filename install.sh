@@ -9,8 +9,8 @@
 set -euo pipefail
 
 # Configuration
-GITHUB_USER="username" # Ganti dengan username GitHub Anda
-GITHUB_REPO="zsh-galasa"
+GITHUB_USER="devops-n00bs" # Username GitHub Anda
+GITHUB_REPO="zsh_devops-n00bs"
 BRANCH="main"
 RAW_URL="https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${BRANCH}"
 
