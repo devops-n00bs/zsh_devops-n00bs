@@ -38,6 +38,33 @@ if [ -f /proc/version ] && grep -qi microsoft /proc/version; then
     IS_WSL=true
 fi
 
+# Detect Operating System dynamically
+detect_os() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        local os_version
+        os_version=$(sw_vers -productVersion 2>/dev/null || echo "")
+        echo "macOS ${os_version}"
+    elif [ -f /proc/version ] && grep -qi microsoft /proc/version; then
+        local distro="Linux"
+        if [ -f /etc/os-release ]; then
+            distro=$(grep '^NAME=' /etc/os-release | cut -d= -f2 | tr -d '"')
+        fi
+        echo "${distro} (WSL Mode)"
+    elif [ -f /etc/os-release ]; then
+        local distro
+        distro=$(grep '^NAME=' /etc/os-release | cut -d= -f2 | tr -d '"')
+        echo "${distro}"
+    else
+        echo "Unix-like OS ($(uname -s))"
+    fi
+}
+
+# Resolve root's home directory dynamically
+ROOT_HOME="/root"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    ROOT_HOME="/var/root"
+fi
+
 # Helper: Check sudo and ask to apply configuration to root
 check_and_apply_to_root() {
     local module=$1
@@ -59,15 +86,25 @@ check_and_apply_to_root() {
         info "Applying configuration to the 'root' user..."
         local SUDO="sudo"
         
+        # Helper to backup existing root file safely
+        backup_root_file() {
+            local file=$1
+            if $SUDO [ -f "$file" ] && ! $SUDO [ -f "${file}.bak" ]; then
+                $SUDO mv "$file" "${file}.bak"
+            fi
+        }
+
         if [ "$module" = "zsh" ]; then
             # 1. Zsh config to root
-            $SUDO mkdir -p /root/.config
-            $SUDO cp "${HOME}/.zshrc" /root/.zshrc
-            $SUDO cp "${HOME}/.config/starship.toml" /root/.config/starship.toml
+            $SUDO mkdir -p "${ROOT_HOME}/.config"
+            backup_root_file "${ROOT_HOME}/.zshrc"
+            $SUDO cp "${HOME}/.zshrc" "${ROOT_HOME}/.zshrc"
+            backup_root_file "${ROOT_HOME}/.config/starship.toml"
+            $SUDO cp "${HOME}/.config/starship.toml" "${ROOT_HOME}/.config/starship.toml"
             
             # 2. Plugins to root
-            $SUDO mkdir -p /root/.zsh/plugins
-            $SUDO cp -r "${HOME}/.zsh/plugins/"* /root/.zsh/plugins/ 2>/dev/null || true
+            $SUDO mkdir -p "${ROOT_HOME}/.zsh/plugins"
+            $SUDO cp -r "${HOME}/.zsh/plugins/"* "${ROOT_HOME}/.zsh/plugins/" 2>/dev/null || true
             
             # 3. Change root default shell to Zsh
             if command -v zsh &> /dev/null; then
@@ -77,20 +114,22 @@ check_and_apply_to_root() {
                     success "Default shell for 'root' changed to Zsh."
                 else
                     # Fallback auto-launch in root .bashrc
-                    $SUDO bash -c "if [ -f /root/.bashrc ] && ! grep -q 'Auto-launch Zsh' /root/.bashrc; then echo -e '\n# Auto-launch Zsh on login\nif [ -t 1 ] && command -v zsh &> /dev/null; then\n    exec zsh\nfi' >> /root/.bashrc; fi"
-                    success "Added Zsh auto-forward to /root/.bashrc"
+                    $SUDO bash -c "if [ -f '${ROOT_HOME}/.bashrc' ] && ! grep -q 'Auto-launch Zsh' '${ROOT_HOME}/.bashrc'; then echo -e '\n# Auto-launch Zsh on login\nif [ -t 1 ] && command -v zsh &> /dev/null; then\n    exec zsh\nfi' >> '${ROOT_HOME}/.bashrc'; fi"
+                    success "Added Zsh auto-forward to ${ROOT_HOME}/.bashrc"
                 fi
             fi
             success "Zsh & Starship configuration applied to 'root' user!"
             
         elif [ "$module" = "vim" ]; then
             # 1. Vim config to root
-            $SUDO cp "${HOME}/.vimrc" /root/.vimrc
+            backup_root_file "${ROOT_HOME}/.vimrc"
+            $SUDO cp "${HOME}/.vimrc" "${ROOT_HOME}/.vimrc"
             
             # 2. Neovim config to root
             if command -v nvim &> /dev/null; then
-                $SUDO mkdir -p /root/.config/nvim
-                $SUDO bash -c "cat << 'EOF' > /root/.config/nvim/init.vim
+                $SUDO mkdir -p "${ROOT_HOME}/.config/nvim"
+                backup_root_file "${ROOT_HOME}/.config/nvim/init.vim"
+                $SUDO bash -c "cat << 'EOF' > ${ROOT_HOME}/.config/nvim/init.vim
 set runtimepath^=~/.vim runtimepath+=~/.vim/after
 let &packpath = &runtimepath
 source ~/.vimrc
@@ -100,7 +139,8 @@ EOF"
             success "Vim/Neovim configuration applied to 'root' user!"
         elif [ "$module" = "tmux" ]; then
             # 1. Tmux config to root
-            $SUDO cp "${HOME}/.tmux.conf" /root/.tmux.conf
+            backup_root_file "${ROOT_HOME}/.tmux.conf"
+            $SUDO cp "${HOME}/.tmux.conf" "${ROOT_HOME}/.tmux.conf"
             success "Tmux configuration applied to 'root' user!"
         fi
     fi
@@ -775,35 +815,37 @@ do_install_tmux() {
     info "=== STARTING TMUX INSTALLATION ==="
 
     # 1. Detect and install Tmux if missing
-    if ! command -v tmux &> /dev/null; then
-        info "Tmux is not installed. Installing Tmux..."
+    if ! command -v tmux &> /dev/null || ! command -v xclip &> /dev/null; then
+        info "Checking/Installing Tmux and clipboard dependencies..."
         SUDO=""
         if [ "$(id -u)" -ne 0 ]; then
             SUDO="sudo"
         fi
         
         if [[ "$OSTYPE" == "darwin"* ]]; then
-            if command -v brew &> /dev/null; then
-                brew install tmux
-            else
-                warn "Homebrew not found. Please install Tmux manually."
+            if ! command -v tmux &> /dev/null; then
+                if command -v brew &> /dev/null; then
+                    brew install tmux
+                else
+                    warn "Homebrew not found. Please install Tmux manually."
+                fi
             fi
         elif [ -f /etc/debian_version ]; then
             $SUDO apt-get update
-            $SUDO apt-get install -y tmux
+            $SUDO apt-get install -y tmux xclip
         elif [ -f /etc/redhat-release ] || [ -f /etc/system-release ]; then
             if command -v dnf &> /dev/null; then
-                $SUDO dnf install -y tmux
+                $SUDO dnf install -y tmux xclip
             else
-                $SUDO yum install -y tmux
+                $SUDO yum install -y tmux xclip
             fi
         elif [ -f /etc/arch-release ]; then
-            $SUDO pacman -S --noconfirm tmux
+            $SUDO pacman -S --noconfirm tmux xclip
         else
-            warn "Could not install Tmux automatically. Please install it manually."
+            warn "Could not verify/install packages automatically. Please ensure tmux and xclip/xsel are installed."
         fi
     else
-        info "Tmux is already installed."
+        info "Tmux and clipboard dependencies are met."
     fi
 
     # 2. Setup .tmux.conf
@@ -945,6 +987,12 @@ if-shell "command -v xclip" {
     bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "xclip -selection clipboard -in"
     bind-key -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "xclip -selection clipboard -in"
     bind-key -T copy-mode MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "xclip -selection clipboard -in"
+} {
+    if-shell "command -v xsel" {
+        bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "xsel -ib"
+        bind-key -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "xsel -ib"
+        bind-key -T copy-mode MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "xsel -ib"
+    }
 }
 EOF
     fi
@@ -996,21 +1044,21 @@ do_uninstall() {
     echo -ne "      - User ($(whoami)) : "
     check_status "${HOME}/.zshrc" false
     echo -ne "      - Root          : "
-    check_status "/root/.zshrc" true
+    check_status "${ROOT_HOME}/.zshrc" true
     echo ""
 
     echo -e "  ${CYAN}[2] Vim & Neovim Configuration:${NC}"
     echo -ne "      - User ($(whoami)) : "
     check_status "${HOME}/.vimrc" false
     echo -ne "      - Root          : "
-    check_status "/root/.vimrc" true
+    check_status "${ROOT_HOME}/.vimrc" true
     echo ""
 
     echo -e "  ${CYAN}[3] Tmux Configuration:${NC}"
     echo -ne "      - User ($(whoami)) : "
     check_status "${HOME}/.tmux.conf" false
     echo -ne "      - Root          : "
-    check_status "/root/.tmux.conf" true
+    check_status "${ROOT_HOME}/.tmux.conf" true
     echo ""
     echo -e "${PURPLE}=======================================================${NC}"
     echo -e "Please select an option to uninstall:"
@@ -1022,6 +1070,26 @@ do_uninstall() {
     echo -e "${PURPLE}=======================================================${NC}"
 
     read -r -p "Enter your choice [1-5]: " UNINSTALL_CHOICE < /dev/tty
+
+    if [ "$UNINSTALL_CHOICE" -eq 5 ] 2>/dev/null; then
+        info "Going back to main menu."
+        return
+    fi
+
+    if [ "$UNINSTALL_CHOICE" -lt 1 ] || [ "$UNINSTALL_CHOICE" -gt 5 ] 2>/dev/null; then
+        error "Invalid choice."
+    fi
+
+    # Select reset method
+    echo ""
+    echo -e "${YELLOW}Select Reset Method for the chosen module(s):${NC}"
+    echo -e "  ${GREEN}1)${NC} Restore Backup (.bak) - Recover your previous settings if available"
+    echo -e "  ${GREEN}2)${NC} Fresh OS Default - Completely erase configurations back to a clean state"
+    read -r -p "Enter your choice [1-2]: " RESET_METHOD < /dev/tty
+
+    if [ "$RESET_METHOD" -ne 1 ] && [ "$RESET_METHOD" -ne 2 ] 2>/dev/null; then
+        error "Invalid reset method choice."
+    fi
 
     # Helper function to restore backup or safely delete config
     restore_backup() {
@@ -1053,14 +1121,79 @@ do_uninstall() {
         fi
     }
 
+    # Helper to reset to fresh OS default
+    fresh_os_reset() {
+        local file=$1
+        local is_root=$2
+        local backup="${file}.bak"
+        
+        if [ "$is_root" = true ]; then
+            local SUDO="sudo"
+            $SUDO rm -f "$backup" 2>/dev/null
+            if $SUDO [ -f "$file" ] 2>/dev/null; then
+                info "Removing root $file..."
+                $SUDO rm -f "$file"
+                success "Removed root $file"
+            fi
+        else
+            rm -f "$backup" 2>/dev/null
+            if [ -f "$file" ]; then
+                info "Removing $file..."
+                rm -f "$file"
+                success "Removed $file"
+            fi
+        fi
+    }
+
+    # Helper to clean bashrc auto-launch forwarding
+    clean_bashrc() {
+        local is_root=$1
+        local target="${HOME}/.bashrc"
+        local template="/etc/skel/.bashrc"
+        local SUDO=""
+        
+        if [ "$is_root" = true ]; then
+            target="${ROOT_HOME}/.bashrc"
+            SUDO="sudo"
+        fi
+
+        # Remove the auto-launch lines first
+        if [ "$is_root" = true ]; then
+            if $SUDO [ -f "$target" ] 2>/dev/null; then
+                $SUDO sed -i '/Auto-launch Zsh/,/fi/d' "$target" 2>/dev/null || true
+            fi
+        else
+            if [ -f "$target" ]; then
+                sed -i '/Auto-launch Zsh/,/fi/d' "$target" 2>/dev/null || true
+            fi
+        fi
+
+        # If doing a fresh OS reset, replace the whole file with template
+        if [ "$RESET_METHOD" -eq 2 ]; then
+            if [ -f "$template" ] && [ "$is_root" = false ]; then
+                info "Restoring template $template to $target..."
+                cp "$template" "$target"
+                success "Restored default template to $target"
+            elif [ "$is_root" = true ] && [ -f "$template" ]; then
+                info "Restoring template $template to root $target..."
+                $SUDO cp "$template" "$target"
+                success "Restored default template to root $target"
+            fi
+        fi
+    }
+
     case "$UNINSTALL_CHOICE" in
         1)
             echo ""
             info "=== UNINSTALLING ZSH & STARSHIP ==="
             
-            # User Zsh cleanup
-            restore_backup "${HOME}/.zshrc" false
-            restore_backup "${HOME}/.config/starship.toml" false
+            if [ "$RESET_METHOD" -eq 1 ]; then
+                restore_backup "${HOME}/.zshrc" false
+                restore_backup "${HOME}/.config/starship.toml" false
+            else
+                fresh_os_reset "${HOME}/.zshrc" false
+                fresh_os_reset "${HOME}/.config/starship.toml" false
+            fi
             
             if [ -d "${HOME}/.zsh" ]; then
                 rm -rf "${HOME}/.zsh"
@@ -1082,33 +1215,33 @@ do_uninstall() {
                 success "Removed Starship binary."
             fi
 
+            clean_bashrc false
+
             # Revert default shell to bash for user
             if [[ "$OSTYPE" != "darwin"* ]]; then
                 if command -v bash &> /dev/null && [ "$(basename "$SHELL")" = "zsh" ]; then
                     info "Reverting default shell back to bash..."
                     chsh -s "$(which bash)" < /dev/tty 2>/dev/null || true
                 fi
-                if [ -f "${HOME}/.bashrc" ] && grep -q "Auto-launch Zsh" "${HOME}/.bashrc"; then
-                    sed -i '/Auto-launch Zsh/,/fi/d' "${HOME}/.bashrc"
-                    success "Removed Zsh auto-forward from ~/.bashrc"
-                fi
             fi
 
             # Root Zsh cleanup if detected
-            if sudo [ -f "/root/.zshrc" ] 2>/dev/null; then
+            if sudo [ -f "${ROOT_HOME}/.zshrc" ] || sudo [ -f "${ROOT_HOME}/.zshrc.bak" ] 2>/dev/null; then
                 echo ""
                 local RM_ROOT_ZSH
                 read -r -p "Do you also want to remove Zsh configurations for 'root' user? (y/N): " RM_ROOT_ZSH < /dev/tty
                 if [[ "$RM_ROOT_ZSH" =~ ^[Yy]$ ]]; then
-                    restore_backup "/root/.zshrc" true
-                    restore_backup "/root/.config/starship.toml" true
-                    sudo rm -rf "/root/.zsh"
+                    if [ "$RESET_METHOD" -eq 1 ]; then
+                        restore_backup "${ROOT_HOME}/.zshrc" true
+                        restore_backup "${ROOT_HOME}/.config/starship.toml" true
+                    else
+                        fresh_os_reset "${ROOT_HOME}/.zshrc" true
+                        fresh_os_reset "${ROOT_HOME}/.config/starship.toml" true
+                    fi
+                    sudo rm -rf "${ROOT_HOME}/.zsh"
                     
                     sudo chsh -s /bin/bash root 2>/dev/null || true
-                    if sudo [ -f "/root/.bashrc" ] 2>/dev/null; then
-                        sudo sed -i '/Auto-launch Zsh/,/fi/d' "/root/.bashrc"
-                        success "Removed Zsh auto-forward from /root/.bashrc"
-                    fi
+                    clean_bashrc true
                     success "Root Zsh cleanup complete!"
                 fi
             fi
@@ -1118,23 +1251,32 @@ do_uninstall() {
             echo ""
             info "=== UNINSTALLING VIM & NEOVIM ==="
             
-            # User Vim cleanup
-            restore_backup "${HOME}/.vimrc" false
-            restore_backup "${HOME}/.config/nvim/init.vim" false
+            if [ "$RESET_METHOD" -eq 1 ]; then
+                restore_backup "${HOME}/.vimrc" false
+                restore_backup "${HOME}/.config/nvim/init.vim" false
+            else
+                fresh_os_reset "${HOME}/.vimrc" false
+                fresh_os_reset "${HOME}/.config/nvim/init.vim" false
+            fi
             if [ -d "${HOME}/.config/nvim" ] && [ -z "$(ls -A "${HOME}/.config/nvim" 2>/dev/null)" ]; then
                 rmdir "${HOME}/.config/nvim"
             fi
 
             # Root Vim cleanup if detected
-            if sudo [ -f "/root/.vimrc" ] 2>/dev/null; then
+            if sudo [ -f "${ROOT_HOME}/.vimrc" ] || sudo [ -f "${ROOT_HOME}/.vimrc.bak" ] 2>/dev/null; then
                 echo ""
                 local RM_ROOT_VIM
                 read -r -p "Do you also want to remove Vim configurations for 'root' user? (y/N): " RM_ROOT_VIM < /dev/tty
                 if [[ "$RM_ROOT_VIM" =~ ^[Yy]$ ]]; then
-                    restore_backup "/root/.vimrc" true
-                    restore_backup "/root/.config/nvim/init.vim" true
-                    if sudo [ -d "/root/.config/nvim" ] 2>/dev/null && [ -z "$(sudo ls -A "/root/.config/nvim" 2>/dev/null)" ]; then
-                        sudo rmdir "/root/.config/nvim"
+                    if [ "$RESET_METHOD" -eq 1 ]; then
+                        restore_backup "${ROOT_HOME}/.vimrc" true
+                        restore_backup "${ROOT_HOME}/.config/nvim/init.vim" true
+                    else
+                        fresh_os_reset "${ROOT_HOME}/.vimrc" true
+                        fresh_os_reset "${ROOT_HOME}/.config/nvim/init.vim" true
+                    fi
+                    if sudo [ -d "${ROOT_HOME}/.config/nvim" ] 2>/dev/null && [ -z "$(sudo ls -A "${ROOT_HOME}/.config/nvim" 2>/dev/null)" ]; then
+                        sudo rmdir "${ROOT_HOME}/.config/nvim"
                     fi
                     success "Root Vim cleanup complete!"
                 fi
@@ -1144,14 +1286,22 @@ do_uninstall() {
         3)
             echo ""
             info "=== UNINSTALLING TMUX ==="
-            restore_backup "${HOME}/.tmux.conf" false
+            if [ "$RESET_METHOD" -eq 1 ]; then
+                restore_backup "${HOME}/.tmux.conf" false
+            else
+                fresh_os_reset "${HOME}/.tmux.conf" false
+            fi
             
-            if sudo [ -f "/root/.tmux.conf" ] 2>/dev/null; then
+            if sudo [ -f "${ROOT_HOME}/.tmux.conf" ] || sudo [ -f "${ROOT_HOME}/.tmux.conf.bak" ] 2>/dev/null; then
                 echo ""
                 local RM_ROOT_TMUX
                 read -r -p "Do you also want to remove Tmux configurations for 'root' user? (y/N): " RM_ROOT_TMUX < /dev/tty
                 if [[ "$RM_ROOT_TMUX" =~ ^[Yy]$ ]]; then
-                    restore_backup "/root/.tmux.conf" true
+                    if [ "$RESET_METHOD" -eq 1 ]; then
+                        restore_backup "${ROOT_HOME}/.tmux.conf" true
+                    else
+                        fresh_os_reset "${ROOT_HOME}/.tmux.conf" true
+                    fi
                 fi
             fi
             echo -e "\n${GREEN}Tmux uninstalled successfully!${NC}\n"
@@ -1161,11 +1311,19 @@ do_uninstall() {
             info "=== UNINSTALLING ALL MODULES (COMPLETE RESET) ==="
             
             # User cleanups
-            restore_backup "${HOME}/.zshrc" false
-            restore_backup "${HOME}/.config/starship.toml" false
-            restore_backup "${HOME}/.vimrc" false
-            restore_backup "${HOME}/.config/nvim/init.vim" false
-            restore_backup "${HOME}/.tmux.conf" false
+            if [ "$RESET_METHOD" -eq 1 ]; then
+                restore_backup "${HOME}/.zshrc" false
+                restore_backup "${HOME}/.config/starship.toml" false
+                restore_backup "${HOME}/.vimrc" false
+                restore_backup "${HOME}/.config/nvim/init.vim" false
+                restore_backup "${HOME}/.tmux.conf" false
+            else
+                fresh_os_reset "${HOME}/.zshrc" false
+                fresh_os_reset "${HOME}/.config/starship.toml" false
+                fresh_os_reset "${HOME}/.vimrc" false
+                fresh_os_reset "${HOME}/.config/nvim/init.vim" false
+                fresh_os_reset "${HOME}/.tmux.conf" false
+            fi
             
             if [ -d "${HOME}/.config/nvim" ] && [ -z "$(ls -A "${HOME}/.config/nvim" 2>/dev/null)" ]; then
                 rmdir "${HOME}/.config/nvim"
@@ -1185,18 +1343,19 @@ do_uninstall() {
                 $SUDO rm -f "$STARSHIP_PATH"
             fi
 
+            clean_bashrc false
+
             if [[ "$OSTYPE" != "darwin"* ]]; then
                 if command -v bash &> /dev/null && [ "$(basename "$SHELL")" = "zsh" ]; then
                     chsh -s "$(which bash)" < /dev/tty 2>/dev/null || true
-                fi
-                if [ -f "${HOME}/.bashrc" ] && grep -q "Auto-launch Zsh" "${HOME}/.bashrc"; then
-                    sed -i '/Auto-launch Zsh/,/fi/d' "${HOME}/.bashrc"
                 fi
             fi
 
             # Root check & cleanups
             local HAS_ROOT_CONFIG=false
-            if sudo [ -f "/root/.zshrc" ] || sudo [ -f "/root/.vimrc" ] || sudo [ -f "/root/.tmux.conf" ] 2>/dev/null; then
+            if sudo [ -f "${ROOT_HOME}/.zshrc" ] || sudo [ -f "${ROOT_HOME}/.zshrc.bak" ] || \
+               sudo [ -f "${ROOT_HOME}/.vimrc" ] || sudo [ -f "${ROOT_HOME}/.vimrc.bak" ] || \
+               sudo [ -f "${ROOT_HOME}/.tmux.conf" ] || sudo [ -f "${ROOT_HOME}/.tmux.conf.bak" ] 2>/dev/null; then
                 HAS_ROOT_CONFIG=true
             fi
 
@@ -1205,20 +1364,26 @@ do_uninstall() {
                 local RM_ROOT_ALL
                 read -r -p "Do you also want to remove ALL configurations for 'root' user? (y/N): " RM_ROOT_ALL < /dev/tty
                 if [[ "$RM_ROOT_ALL" =~ ^[Yy]$ ]]; then
-                    restore_backup "/root/.zshrc" true
-                    restore_backup "/root/.config/starship.toml" true
-                    restore_backup "/root/.vimrc" true
-                    restore_backup "/root/.config/nvim/init.vim" true
-                    restore_backup "/root/.tmux.conf" true
+                    if [ "$RESET_METHOD" -eq 1 ]; then
+                        restore_backup "${ROOT_HOME}/.zshrc" true
+                        restore_backup "${ROOT_HOME}/.config/starship.toml" true
+                        restore_backup "${ROOT_HOME}/.vimrc" true
+                        restore_backup "${ROOT_HOME}/.config/nvim/init.vim" true
+                        restore_backup "${ROOT_HOME}/.tmux.conf" true
+                    else
+                        fresh_os_reset "${ROOT_HOME}/.zshrc" true
+                        fresh_os_reset "${ROOT_HOME}/.config/starship.toml" true
+                        fresh_os_reset "${ROOT_HOME}/.vimrc" true
+                        fresh_os_reset "${ROOT_HOME}/.config/nvim/init.vim" true
+                        fresh_os_reset "${ROOT_HOME}/.tmux.conf" true
+                    fi
                     
-                    if sudo [ -d "/root/.config/nvim" ] 2>/dev/null && [ -z "$(sudo ls -A "/root/.config/nvim" 2>/dev/null)" ]; then
-                        sudo rmdir "/root/.config/nvim"
+                    if sudo [ -d "${ROOT_HOME}/.config/nvim" ] 2>/dev/null && [ -z "$(sudo ls -A "${ROOT_HOME}/.config/nvim" 2>/dev/null)" ]; then
+                        sudo rmdir "${ROOT_HOME}/.config/nvim"
                     fi
-                    sudo rm -rf "/root/.zsh"
+                    sudo rm -rf "${ROOT_HOME}/.zsh"
                     sudo chsh -s /bin/bash root 2>/dev/null || true
-                    if sudo [ -f "/root/.bashrc" ] 2>/dev/null; then
-                        sudo sed -i '/Auto-launch Zsh/,/fi/d' "/root/.bashrc"
-                    fi
+                    clean_bashrc true
                     success "Root cleanup complete!"
                 fi
             fi
@@ -1235,17 +1400,55 @@ do_uninstall() {
 
 # Interactive Menu Loop
 clear
-echo -e "${PURPLE}==================================================${NC}"
-echo -e "${CYAN}       UNIVERSAL TERMINAL SETUP MANAGER (${VERSION})    ${NC}"
-echo -e "${PURPLE}==================================================${NC}"
-echo -e "Please select an option:"
-echo -e "  ${GREEN}1)${NC} Install / Update Zsh & Starship"
-echo -e "  ${GREEN}2)${NC} Install / Update Vim / Neovim"
-echo -e "  ${GREEN}3)${NC} Install / Update Tmux"
-echo -e "  ${GREEN}4)${NC} Install / Update ALL (Zsh, Vim, Tmux)"
-echo -e "  ${RED}5)${NC} Uninstall / Revert to Default"
-echo -e "  ${YELLOW}6)${NC} Exit"
-echo -e "${PURPLE}==================================================${NC}"
+
+OS_NAME=$(detect_os)
+SUDO_STATUS=$(check_sudo)
+CURRENT_SHELL="${SHELL:-unknown}"
+ACTIVE_USER=$(whoami)
+CPU_ARCH=$(uname -m 2>/dev/null || echo "unknown")
+
+# Get Module Status
+ZSH_USER_STATUS=$(get_status_label "${HOME}/.zshrc" false)
+ZSH_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.zshrc" true)
+
+VIM_USER_STATUS=$(get_status_label "${HOME}/.vimrc" false)
+VIM_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.vimrc" true)
+
+TMUX_USER_STATUS=$(get_status_label "${HOME}/.tmux.conf" false)
+TMUX_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.tmux.conf" true)
+
+echo -e "${CYAN}  ____                 ___               _  _         ${NC}"
+echo -e "${CYAN} |  _ \  _____   __   / _ \ _ __  ___   | || |__  ___ ${NC}"
+echo -e "${CYAN} | | | |/ _ \ \ / /  | | | | '_ \/ _ \  | || '_ \/ __|${NC}"
+echo -e "${CYAN} | |_| |  __/\ V /   | |_| | |_) \__ \  | || |_) \__ \\${NC}"
+echo -e "${CYAN} |____/ \___| \_/     \___/| .__/|___/  |_||_.__/|___/${NC}"
+echo -e "${CYAN}                           |_|                        ${NC}"
+echo -e "${PURPLE}               DEVOPS-N00BS TERMINAL SUITE (${VERSION})${NC}"
+echo -e "${BLUE}               Created by: @devops-n00bs | Repo: zsh_devops-n00bs${NC}"
+echo -e "${BLUE}================================================================================${NC}"
+echo -e "${YELLOW} SYSTEM DIAGNOSTICS:${NC}"
+echo -e "   * Operating System : ${GREEN}${OS_NAME}${NC}"
+echo -e "   * CPU Architecture : ${CYAN}${CPU_ARCH}${NC}"
+echo -e "   * Active User      : ${GREEN}${ACTIVE_USER}${NC} (Sudo: ${SUDO_STATUS})"
+echo -e "   * Current Shell    : ${YELLOW}${CURRENT_SHELL}${NC}"
+echo -e "${BLUE}================================================================================${NC}"
+echo -e "${YELLOW} MODULE STATUS:${NC}"
+echo -e "   [1] Zsh Shell & Starship Prompt  : User: ${ZSH_USER_STATUS} / Root: ${ZSH_ROOT_STATUS}"
+echo -e "   [2] Vim & Neovim Configurations  : User: ${VIM_USER_STATUS} / Root: ${VIM_ROOT_STATUS}"
+echo -e "   [3] Tmux Premium Layout          : User: ${TMUX_USER_STATUS} / Root: ${TMUX_ROOT_STATUS}"
+echo -e "${BLUE}================================================================================${NC}"
+echo -e "${YELLOW} ABOUT THIS SUITE:${NC}"
+echo -e "   Automates deployment of a high-performance, keyboard-driven terminal environment."
+echo -e "   Features native clipboard sync, custom statusline, and zero font dependencies."
+echo -e "${BLUE}================================================================================${NC}"
+echo -e "${YELLOW} ACTIONS MENU:${NC}"
+echo -e "   ${GREEN}1)${NC} Install / Update Zsh & Starship Prompt"
+echo -e "   ${GREEN}2)${NC} Install / Update Vim / Neovim Configuration"
+echo -e "   ${GREEN}3)${NC} Install / Update Tmux Premium Layout & Clipboard"
+echo -e "   ${GREEN}4)${NC} Install / Update ALL Modules (Zsh, Vim, Tmux)"
+echo -e "   ${RED}5)${NC} Uninstall / Revert to Default"
+echo -e "   ${YELLOW}6)${NC} Exit"
+echo -e "${BLUE}================================================================================${NC}"
 
 # Read input directly from tty to support curl execution
 read -r -p "Enter your choice [1-6]: " CHOICE < /dev/tty
