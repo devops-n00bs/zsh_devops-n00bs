@@ -8,6 +8,9 @@
 # Exit on error, undefined variables, and pipe failures
 set -euo pipefail
 
+# Version
+VERSION="v1.0.1"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -368,13 +371,26 @@ do_uninstall() {
         success "Menghapus folder ~/.zsh"
     fi
 
-    # 4. Clean up cache (zcompdump and starship cache)
-    info "Membersihkan cache terminal..."
+    # 4. Clean up cache & riwayat terminal
+    info "Membersihkan cache & riwayat terminal..."
     rm -f "${HOME}/.zcompdump"*
+    rm -f "${HOME}/.zsh_history"
     rm -rf "${HOME}/.cache/starship"
-    success "Cache zcompdump dan cache Starship telah dibersihkan."
+    success "Cache zcompdump, cache Starship, dan riwayat Zsh (~/.zsh_history) telah dibersihkan."
 
-    # 5. Automatically try to revert default shell to bash
+    # 5. Remove Starship binary if installed
+    if command -v starship &> /dev/null; then
+        STARSHIP_PATH=$(which starship)
+        info "Menghapus binary Starship di $STARSHIP_PATH..."
+        SUDO=""
+        if [ "$(id -u)" -ne 0 ]; then
+            SUDO="sudo"
+        fi
+        $SUDO rm -f "$STARSHIP_PATH"
+        success "Starship binary berhasil dihapus."
+    fi
+
+    # 6. Automatically try to revert default shell to bash
     CURRENT_SHELL=$(basename "$SHELL")
     if [[ "$OSTYPE" == "darwin"* ]]; then
         info "Di macOS, shell default standar adalah zsh. Tidak perlu diubah ke bash."
@@ -395,7 +411,7 @@ do_uninstall() {
         fi
     fi
 
-    echo -e "\n${GREEN}Pembersihan selesai! Semua file kustom & cache telah dihapus bersih seperti semula.${NC}"
+    echo -e "\n${GREEN}Pembersihan selesai! Semua file kustom, binary, & cache telah dihapus bersih seperti semula.${NC}"
     echo -e "${YELLOW}Silakan restart terminal atau buka sesi terminal baru untuk melihat efeknya.${NC}\n"
     exit 0
 }
@@ -403,7 +419,7 @@ do_uninstall() {
 # Interactive Menu Loop
 clear
 echo -e "${PURPLE}==================================================${NC}"
-echo -e "${CYAN}           ZSH & STARSHIP SETUP MANAGER           ${NC}"
+echo -e "${CYAN}        ZSH & STARSHIP SETUP MANAGER (${VERSION})       ${NC}"
 echo -e "${PURPLE}==================================================${NC}"
 echo -e "Silakan pilih tindakan yang ingin Anda lakukan:"
 echo -e "  ${GREEN}1)${NC} Pasang / Perbarui Konfigurasi (Install/Update)"
