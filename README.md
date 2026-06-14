@@ -73,3 +73,17 @@ Your prompt displays:
 *   **`⇡`** (Ahead) : Local commits not yet pushed to GitHub.
 *   **`⇣`** (Behind) : Remote changes available on GitHub but not yet pulled.
 *   **`$`** (Stashed) : Changes saved temporarily in git stash.
+
+---
+
+## Tips & Troubleshooting
+
+### Viewing Files with Line Numbers (`bat` vs `batcat`)
+*   **For Debian/Ubuntu (including WSL)**: The package `bat` is renamed to `batcat` to avoid conflicts. Run `batcat <filename>` to view files with syntax highlighting, line numbers, and borders.
+*   **For macOS/other Linux distros**: Run `bat <filename>`.
+*   *Note*: The standard `cat` command is aliased to run in `plain` style (`bat --style=plain`) to preserve compatibility with shell scripts while still providing syntax highlighting.
+
+### Understanding `(END)` in the Terminal (Pager)
+When viewing long file contents or running git logs/diffs, Zsh will automatically paginate the output using a pager (`less`).
+*   **To exit and return to prompt**: Press the **`q`** key on your keyboard.
+*   **To navigate**: Use the **Up/Down Arrow keys** or **Spacebar** (to scroll down a page).
