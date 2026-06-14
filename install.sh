@@ -634,6 +634,48 @@ set statusline+=\ %l:%c\                               " Line:Column position
 highlight StatusLineMode ctermfg=15 ctermbg=4 cterm=bold guifg=#FFFFFF guibg=#005F87
 highlight StatusLine ctermfg=15 ctermbg=8 cterm=none guifg=#FFFFFF guibg=#3A3A3A
 highlight StatusLineNC ctermfg=8 ctermbg=0 cterm=none guifg=#585858 guibg=#1C1C1C
+
+" ------------------------------------------------------------------------------
+" 7. Cross-Platform Clipboard Integration (WSL, macOS, Linux)
+" ------------------------------------------------------------------------------
+" WSL (Windows Subsystem for Linux)
+if has('unix') && filereadable('/proc/version') && matchstr(readfile('/proc/version')[0], 'Microsoft\|microsoft') != ''
+    " Let Neovim use clip.exe and powershell.exe natively for y and p
+    let g:clipboard = {
+          \   'name': 'WslClipboard',
+          \   'copy': {
+          \      '+': 'clip.exe',
+          \      '*': 'clip.exe',
+          \    },
+          \   'paste': {
+          \      '+': 'powershell.exe -NoProfile -Command [Console]::Out.Write($(Get-Clipboard))',
+          \      '*': 'powershell.exe -NoProfile -Command [Console]::Out.Write($(Get-Clipboard))',
+          \   },
+          \   'cache_enabled': 0,
+          \ }
+
+    " Ctrl+C in Visual mode to copy to Windows clipboard
+    vnoremap <C-c> :w !clip.exe<CR><CR>
+    " Ctrl+V in Insert mode to paste from Windows clipboard
+    inoremap <C-v> <C-r>=system('powershell.exe -NoProfile -Command [Console]::Out.Write($(Get-Clipboard))')<CR>
+endif
+
+" macOS
+if has('macunix')
+    vnoremap <C-c> :w !pbcopy<CR><CR>
+    inoremap <C-v> <C-r>=system('pbpaste')<CR>
+endif
+
+" Linux (non-WSL)
+if has('unix') && !filereadable('/proc/version')
+    if executable('xclip')
+        vnoremap <C-c> :w !xclip -selection clipboard<CR><CR>
+        inoremap <C-v> <C-r>=system('xclip -selection clipboard -o')<CR>
+    elseif executable('xsel')
+        vnoremap <C-c> :w !xsel -ib<CR><CR>
+        inoremap <C-v> <C-r>=system('xsel -ob')<CR>
+    endif
+endif
 EOF
     fi
     success "Vim configuration successfully applied!"
