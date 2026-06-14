@@ -84,10 +84,28 @@ fi
 # ------------------------------------------------------------------------------
 # 6. Aliases & Functions
 # ------------------------------------------------------------------------------
-alias ll="ls -lAh --color=auto"
-alias l="ls -lh --color=auto"
-alias la="ls -A --color=auto"
+# Default general aliases
 alias grep="grep --color=auto"
-
-# Fast reload of Zsh configuration
 alias reload="exec zsh"
+
+# Smart Auto-Aliases (Check for modern CLI replacements)
+if command -v bat &> /dev/null; then
+    alias cat="bat --style=plain"
+fi
+
+if command -v eza &> /dev/null; then
+    alias ls="eza --git"
+    alias ll="eza -lah --git"
+    alias la="eza -a --git"
+    alias l="eza -lh --git"
+elif command -v exa &> /dev/null; then
+    alias ls="exa --git"
+    alias ll="exa -lah --git"
+    alias la="exa -a --git"
+    alias l="exa -lh --git"
+else
+    alias ls="ls --color=auto"
+    alias ll="ls -lAh --color=auto"
+    alias la="ls -A --color=auto"
+    alias l="ls -lh --color=auto"
+fi
