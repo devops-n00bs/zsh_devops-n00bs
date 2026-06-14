@@ -78,7 +78,7 @@ format = "via [$symbol($version)]($style) "
 [python]
 symbol = " "
 style = "bold yellow"
-format = "via [$symbol($version)(\($virtualenv\))]($style) "
+format = 'via [$symbol($version)(\($virtualenv\))]($style) '
 
 [golang]
 symbol = " "
