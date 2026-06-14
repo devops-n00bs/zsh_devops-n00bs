@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+
+# ==============================================================================
+# AUTOMATIC ZSH CONFIGURATION INSTALLER
+# Works on macOS, WSL, and Linux Server
+# ==============================================================================
+
+# Exit on error, undefined variables, and pipe failures
+set -euo pipefail
+
+# Configuration
+GITHUB_USER="username" # Ganti dengan username GitHub Anda
+GITHUB_REPO="zsh-galasa"
+BRANCH="main"
+RAW_URL="https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${BRANCH}"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+info() { echo -e "${BLUE}[INFO]${NC} $*"; }
+warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
+error() { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
+success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
+
+# 1. Detect environment & dependencies
+info "Memeriksa dependensi..."
+for cmd in git curl zsh; do
+    if ! command -v "$cmd" &> /dev/null; then
+        error "Perintah '$cmd' tidak ditemukan. Harap instal '$cmd' terlebih dahulu."
+    fi
+done
+
+# Detect if script is run locally or downloaded directly
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" &>/dev/null && pwd)"
+IS_LOCAL=false
+if [[ -f "${SCRIPT_DIR}/zshrc" && -f "${SCRIPT_DIR}/starship.toml" ]]; then
+    IS_LOCAL=true
+    info "Menjalankan installer dari salinan lokal di: ${SCRIPT_DIR}"
+fi
+
+# 2. Install Starship Prompt
+if ! command -v starship &> /dev/null; then
+    info "Menginstal Starship Prompt..."
+    curl -sS https://starship.rs/install.sh | sh -s -- --yes
+    success "Starship berhasil diinstal."
+else
+    info "Starship sudah terinstal."
+fi
+
+# 3. Setup plugin directory and download plugins
+PLUGIN_DIR="${HOME}/.zsh/plugins"
+info "Mengatur plugin Zsh..."
+mkdir -p "${PLUGIN_DIR}"
+
+# Helper to clone or update plugins
+setup_plugin() {
+    local name=$1
+    local url=$2
+    local path="${PLUGIN_DIR}/${name}"
+    
+    if [ -d "$path" ]; then
+        info "Memperbarui plugin ${name}..."
+        git -C "$path" pull
+    else
+        info "Mengunduh plugin ${name}..."
+        git clone --depth 1 "$url" "$path"
+    fi
+}
+
+setup_plugin "zsh-autosuggestions" "https://github.com/zsh-users/zsh-autosuggestions.git"
+setup_plugin "zsh-syntax-highlighting" "https://github.com/zsh-users/zsh-syntax-highlighting.git"
+
+# 4. Install configuration files
+info "Menerapkan file konfigurasi..."
+
+# Setup .zshrc
+if [ -f "${HOME}/.zshrc" ]; then
+    warn "Menemukan file ~/.zshrc yang sudah ada. Membuat cadangan di ~/.zshrc.bak"
+    mv "${HOME}/.zshrc" "${HOME}/.zshrc.bak"
+fi
+
+if [ "$IS_LOCAL" = true ]; then
+    cp "${SCRIPT_DIR}/zshrc" "${HOME}/.zshrc"
+else
+    info "Mengunduh file zshrc dari GitHub..."
+    curl -fsSL "${RAW_URL}/zshrc" -o "${HOME}/.zshrc"
+fi
+
+# Setup starship.toml
+mkdir -p "${HOME}/.config"
+if [ "$IS_LOCAL" = true ]; then
+    cp "${SCRIPT_DIR}/starship.toml" "${HOME}/.config/starship.toml"
+else
+    info "Mengunduh file starship.toml dari GitHub..."
+    curl -fsSL "${RAW_URL}/starship.toml" -o "${HOME}/.config/starship.toml"
+fi
+
+success "Konfigurasi Zsh dan Starship telah diterapkan!"
+
+# 5. Suggest shell change
+CURRENT_SHELL=$(basename "$SHELL")
+if [ "$CURRENT_SHELL" != "zsh" ]; then
+    warn "Shell saat ini adalah ${CURRENT_SHELL}."
+    echo -e "${YELLOW}Jalankan perintah berikut untuk mengubah default shell Anda menjadi zsh:${NC}"
+    echo -e "  chsh -s \$(which zsh)"
+fi
+
+echo -e "\n${GREEN}Instalasi selesai! Silakan buka kembali terminal Anda atau jalankan:${NC}"
+echo -e "  exec zsh\n"

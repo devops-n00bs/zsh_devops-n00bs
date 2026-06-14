@@ -1,0 +1,91 @@
+# ==============================================================================
+# STARSHIP CONFIGURATION (Premium & Sleek Theme)
+# ==============================================================================
+
+# Don't print a new line at the start of the prompt
+add_newline = true
+
+# Use custom format
+format = """
+$directory\
+$git_branch\
+$git_status\
+$git_state\
+$fill\
+$cmd_duration $jobs $time
+$character"""
+
+# Replace the "blank" right-side prompt with a clean divider
+[fill]
+symbol = " "
+disabled = false
+
+# Character (Prompt Symbol)
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vicmd_symbol = "[❮](bold yellow)"
+
+# Directory Settings
+[directory]
+style = "bold cyan"
+read_only = " 󰌾"
+truncation_length = 3
+truncate_to_repo = true
+truncation_symbol = "../"
+
+# Git Configuration
+[git_branch]
+symbol = " "
+style = "bold magenta"
+format = "on [$symbol$branch]($style) "
+
+[git_status]
+style = "red"
+format = "[[($all_status$ahead_behind)]($style)]($style) "
+conflicted = "="
+ahead = "⇡"
+behind = "⇣"
+diverged = "⇕"
+untracked = "?"
+stashed = "$"
+modified = "!"
+added = "+"
+renamed = "»"
+deleted = "✘"
+
+[git_state]
+format = '\([$state( $progress_current/$progress_total)]($style)\) '
+style = "bright-black"
+
+# Command Duration
+[cmd_duration]
+min_time = 500
+format = "took [$duration](bold yellow) "
+
+# Time settings
+[time]
+disabled = false
+format = "at [$time](bold black) "
+time_format = "%T"
+
+# Language and system-specific indicators (Clean & compact styles)
+[nodejs]
+symbol = " "
+style = "bold green"
+format = "via [$symbol($version)]($style) "
+
+[python]
+symbol = " "
+style = "bold yellow"
+format = "via [$symbol($version)(\($virtualenv\))]($style) "
+
+[golang]
+symbol = " "
+style = "bold cyan"
+format = "via [$symbol($version)]($style) "
+
+[rust]
+symbol = " "
+style = "bold red"
+format = "via [$symbol($version)]($style) "
