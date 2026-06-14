@@ -7,12 +7,25 @@ add_newline = true
 
 # Use custom format
 format = """
-$directory$git_branch$git_status$git_state
+$username$hostname$directory$git_branch$git_status$git_state
 $character"""
 
 # OS Module (Disabled for super minimal look)
 [os]
 disabled = true
+
+# Username Configuration
+[username]
+show_always = true
+style_user = "bold green"
+style_root = "bold red"
+format = "[$user]($style)"
+
+# Hostname Configuration
+[hostname]
+ssh_only = false
+style = "bold blue"
+format = "[@$hostname]($style) "
 
 # Character (Standard ASCII, no special font required)
 [character]
