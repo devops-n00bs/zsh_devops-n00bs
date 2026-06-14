@@ -8,12 +8,6 @@
 # Exit on error, undefined variables, and pipe failures
 set -euo pipefail
 
-# Configuration
-GITHUB_USER="devops-n00bs" # Username GitHub Anda
-GITHUB_REPO="zsh_devops-n00bs"
-BRANCH="main"
-RAW_URL="https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${BRANCH}"
-
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -132,8 +126,96 @@ do_install() {
     if [ "$IS_LOCAL" = true ]; then
         cp "${SCRIPT_DIR}/zshrc" "${HOME}/.zshrc"
     else
-        info "Mengunduh file zshrc dari GitHub..."
-        curl -fsSL "${RAW_URL}/zshrc?v=$(date +%s)" -o "${HOME}/.zshrc"
+        info "Menulis file .zshrc..."
+        cat << 'EOF' > "${HOME}/.zshrc"
+# ==============================================================================
+# ZSH CONFIGURATION (Custom, Fast, and Clean)
+# Compatible with macOS, Linux, and Windows WSL
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. History Configuration
+# ------------------------------------------------------------------------------
+HISTFILE="${HOME}/.zsh_history"
+HISTSIZE=10000
+SAVEHIST=10000
+
+# History options
+setopt appendhistory       # Append to history file, don't overwrite
+setopt sharehistory        # Share history across all active sessions
+setopt histignorealldups   # Delete old recorded duplicate behavior
+setopt histignoredups      # Do not write events to history that are duplicates of previous event
+setopt histignorespace     # Don't record commands starting with a space
+setopt histreduceblanks    # Remove superfluous blanks before recording to history
+
+# ------------------------------------------------------------------------------
+# 2. Completion System (compinit)
+# ------------------------------------------------------------------------------
+autoload -Uz compinit
+if [[ -n ${ZSH_COMPDUMP} ]]; then
+    compinit -d "${ZSH_COMPDUMP}"
+else
+    compinit
+fi
+
+# Completion Styling
+zstyle ':completion:*' menu select
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
+
+# ------------------------------------------------------------------------------
+# 3. Key Bindings & Behavior
+# ------------------------------------------------------------------------------
+# Use emacs keybindings by default (even if EDITOR is set to vi)
+bindkey -e
+
+# Up/Down arrow search history based on prefix
+autoload -U up-line-or-beginning-search
+autoload -U down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey '^[[A' up-line-or-beginning-search # Up Arrow
+bindkey '^[[B' down-line-or-beginning-search # Down Arrow
+
+# ------------------------------------------------------------------------------
+# 4. Plugins (Auto-suggestions & Syntax Highlighting)
+# ------------------------------------------------------------------------------
+# Default path for custom plugins
+ZSH_PLUGIN_DIR="${HOME}/.zsh/plugins"
+
+# Load zsh-autosuggestions
+if [[ -f "${ZSH_PLUGIN_DIR}/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
+    source "${ZSH_PLUGIN_DIR}/zsh-autosuggestions/zsh-autosuggestions.zsh"
+    # Customize autosuggestion color (sleek dark gray)
+    ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=8"
+fi
+
+# Load zsh-syntax-highlighting
+if [[ -f "${ZSH_PLUGIN_DIR}/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
+    source "${ZSH_PLUGIN_DIR}/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+fi
+
+# ------------------------------------------------------------------------------
+# 5. Prompt Initialization (Starship)
+# ------------------------------------------------------------------------------
+if command -v starship &> /dev/null; then
+    eval "$(starship init zsh)"
+else
+    # Fallback prompt if Starship is not installed yet
+    PROMPT="%F{cyan}%n%f@%F{blue}%m%f %F{green}%~%f %F{yellow}$%f "
+fi
+
+# ------------------------------------------------------------------------------
+# 6. Aliases & Functions
+# ------------------------------------------------------------------------------
+alias ll="ls -lAh --color=auto"
+alias l="ls -lh --color=auto"
+alias la="ls -A --color=auto"
+alias grep="grep --color=auto"
+
+# Fast reload of Zsh configuration
+alias reload="exec zsh"
+EOF
     fi
 
     # Setup starship.toml
@@ -146,8 +228,100 @@ do_install() {
     if [ "$IS_LOCAL" = true ]; then
         cp "${SCRIPT_DIR}/starship.toml" "${HOME}/.config/starship.toml"
     else
-        info "Mengunduh file starship.toml dari GitHub..."
-        curl -fsSL "${RAW_URL}/starship.toml?v=$(date +%s)" -o "${HOME}/.config/starship.toml"
+        info "Menulis file starship.toml..."
+        cat << 'EOF' > "${HOME}/.config/starship.toml"
+# ==============================================================================
+# STARSHIP CONFIGURATION (Premium & Sleek Theme)
+# ==============================================================================
+
+# Don't print a new line at the start of the prompt
+add_newline = true
+
+# Use custom format
+format = """
+$directory\
+$git_branch\
+$git_status\
+$git_state\
+$fill\
+$cmd_duration $jobs $time
+$character"""
+
+# Replace the "blank" right-side prompt with a clean divider
+[fill]
+symbol = " "
+disabled = false
+
+# Character (Prompt Symbol)
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vicmd_symbol = "[❮](bold yellow)"
+
+# Directory Settings
+[directory]
+style = "bold cyan"
+read_only = " 󰌾"
+truncation_length = 3
+truncate_to_repo = true
+truncation_symbol = "../"
+
+# Git Configuration
+[git_branch]
+symbol = " "
+style = "bold magenta"
+format = "on [$symbol$branch]($style) "
+
+[git_status]
+style = "red"
+format = "[[($all_status$ahead_behind)]($style)]($style) "
+conflicted = "="
+ahead = "⇡"
+behind = "⇣"
+diverged = "⇕"
+untracked = "?"
+stashed = "$"
+modified = "!"
+added = "+"
+renamed = "»"
+deleted = "✘"
+
+[git_state]
+format = '\([$state( $progress_current/$progress_total)]($style)\) '
+style = "bright-black"
+
+# Command Duration
+[cmd_duration]
+min_time = 500
+format = "took [$duration](bold yellow) "
+
+# Time settings
+[time]
+disabled = false
+format = "at [$time](bold black) "
+time_format = "%T"
+
+# Language and system-specific indicators (Clean & compact styles)
+[nodejs]
+symbol = " "
+style = "bold green"
+format = "via [$symbol($version)]($style) "
+
+[python]
+symbol = " "
+style = "bold yellow"
+format = 'via [$symbol($version)(\($virtualenv\))]($style) '
+
+[golang]
+symbol = " "
+style = "bold cyan"
+format = "via [$symbol($version)]($style) "
+
+[rust]
+symbol = " "
+style = "bold red"
+format = "via [$symbol($version)]($style) "
+EOF
     fi
 
     success "Konfigurasi Zsh dan Starship telah diterapkan!"
