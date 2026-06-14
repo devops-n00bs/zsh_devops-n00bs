@@ -38,10 +38,10 @@ if [ -f /proc/version ] && grep -qi microsoft /proc/version; then
     IS_WSL=true
 fi
 
-# Function: Install or Update Configuration
-do_install() {
+# Function: Install or Update Zsh & Starship Configuration
+do_install_zsh() {
     echo ""
-    info "=== STARTING INSTALLATION / UPDATE ==="
+    info "=== STARTING ZSH & STARSHIP INSTALLATION ==="
     
     # 1. Detect environment & dependencies
     info "Checking core dependencies..."
@@ -446,8 +446,205 @@ EOF
         fi
     fi
 
-    echo -e "\n${GREEN}Installation complete! Please restart your terminal or run:${NC}"
+    echo -e "\n${GREEN}Zsh & Starship installation complete! Please restart your terminal or run:${NC}"
     echo -e "  exec zsh\n"
+}
+
+# Function: Install or Update Vim & Neovim Configuration
+do_install_vim() {
+    echo ""
+    info "=== STARTING VIM/NEOVIM INSTALLATION ==="
+
+    # 1. Detect and install Vim if missing
+    if ! command -v vim &> /dev/null; then
+        info "Vim is not installed. Installing Vim..."
+        SUDO=""
+        if [ "$(id -u)" -ne 0 ]; then
+            SUDO="sudo"
+        fi
+        
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            if ! command -v brew &> /dev/null; then
+                error "Homebrew not found. Please install Homebrew or install Vim manually."
+            fi
+            brew install vim
+        elif [ -f /etc/debian_version ]; then
+            $SUDO apt-get update
+            $SUDO apt-get install -y vim
+        elif [ -f /etc/redhat-release ] || [ -f /etc/system-release ]; then
+            if command -v dnf &> /dev/null; then
+                $SUDO dnf install -y vim
+            else
+                $SUDO yum install -y vim
+            fi
+        elif [ -f /etc/arch-release ]; then
+            $SUDO pacman -Syu --noconfirm vim
+        else
+            warn "Could not install Vim automatically. Please install it manually."
+        fi
+    else
+        info "Vim is already installed."
+    fi
+
+    # 2. Setup .vimrc
+    if [ -f "${HOME}/.vimrc" ] && [ ! -f "${HOME}/.vimrc.bak" ]; then
+        warn "Existing ~/.vimrc found. Creating backup at ~/.vimrc.bak"
+        mv "${HOME}/.vimrc" "${HOME}/.vimrc.bak"
+    fi
+
+    if [ "$IS_LOCAL" = true ]; then
+        cp "${SCRIPT_DIR}/vimrc" "${HOME}/.vimrc"
+    else
+        info "Writing ~/.vimrc configuration..."
+        cat << 'EOF' > "${HOME}/.vimrc"
+" ==============================================================================
+" UNIVERSAL VIM / NEOVIM CONFIGURATION
+" Compatible with macOS, Linux, and Windows WSL
+" ==============================================================================
+
+" ------------------------------------------------------------------------------
+" 1. General Settings
+" ------------------------------------------------------------------------------
+set nocompatible              " Be iMproved, disable compatibility with old vi
+filetype plugin indent on     " Enable filetype detection, plugins, and indents
+syntax on                     " Enable syntax highlighting
+
+" Encoding
+set encoding=utf-8
+set fileencodings=utf-8,latin1
+
+" History & Buffers
+set history=1000              " Store more command/search history
+set hidden                    " Allow switching buffers without saving first
+
+" ------------------------------------------------------------------------------
+" 2. UI & Appearance
+" ------------------------------------------------------------------------------
+set number                    " Show line numbers
+set showcmd                   " Display incomplete commands in status bar
+set showmode                  " Keep showing current mode (normal/insert/visual)
+set cursorline                " Highlight the current screen line
+set lazyredraw                " Don't redraw screen while executing macros
+set ttyfast                   " Optimize terminal redrawing for faster response
+
+" Mouse support
+set mouse=a                   " Enable mouse support in all modes (scroll, select, resize)
+
+" ------------------------------------------------------------------------------
+" 3. Text Formatting & Indentation
+" ------------------------------------------------------------------------------
+set tabstop=4                 " Number of visual spaces per TAB
+set softtabstop=4             " Number of spaces in tab when editing
+set shiftwidth=4              " Number of spaces for autoindent
+set expandtab                 " Convert TABs to spaces
+set autoindent                " Copy indent from current line when starting a new one
+set smartindent               " Intelligent indentation for C-like languages
+
+" ------------------------------------------------------------------------------
+" 4. Search Behavior
+" ------------------------------------------------------------------------------
+set hlsearch                  " Highlight search matches
+set incsearch                 " Show search matches as you type
+set ignorecase                " Ignore case when searching...
+set smartcase                 " ...unless search term contains uppercase letters
+
+" ------------------------------------------------------------------------------
+" 5. Key Bindings & Shortcuts
+" ------------------------------------------------------------------------------
+" Map leader key to Space
+let mapleader = " "
+
+" Fast saving and exiting
+nnoremap <leader>w :w<CR>
+nnoremap <leader>q :q<CR>
+nnoremap <leader>x :x<CR>
+
+" Clear search highlighting with Esc or Space+c
+nnoremap <silent> <Esc> :nohlsearch<CR>
+nnoremap <silent> <leader>c :nohlsearch<CR>
+
+" Easy pane navigation (using Ctrl + Arrow keys)
+nnoremap <C-Left> <C-w>h
+nnoremap <C-Down> <C-w>j
+nnoremap <C-Up> <C-w>k
+nnoremap <C-Right> <C-w>l
+
+" Fast split window creation
+nnoremap <leader>vs :vsplit<CR>
+nnoremap <leader>hs :split<CR>
+
+" ------------------------------------------------------------------------------
+" 6. Custom Statusline (Premium & Clean Style, No Plugins Required)
+" ------------------------------------------------------------------------------
+set laststatus=2              " Always display the status line
+
+" Function to return readable current mode
+function! ModeCurrent()
+    let l:mode = mode()
+    if l:mode ==# 'n'      | return '  NORMAL  ' | endif
+    if l:mode ==# 'i'      | return '  INSERT  ' | endif
+    if l:mode ==# 'R'      | return '  REPLACE ' | endif
+    if l:mode ==# 'v'      | return '  VISUAL  ' | endif
+    if l:mode ==# 'V'      | return '  V-LINE  ' | endif
+    if l:mode ==# "\<C-v>" | return '  V-BLOCK ' | endif
+    if l:mode ==# 'c'      | return '  COMMAND ' | endif
+    if l:mode ==# 't'      | return '  TERMINAL' | endif
+    return ' ' . l:mode . ' '
+endfunction
+
+" Build the statusline
+set statusline=%#StatusLineMode#%{ModeCurrent()}%*   " Mode indicator
+set statusline+=\ %f\ %m\ %r\ %h\ %w                   " File path, modified, read-only
+set statusline+=%=                                     " Align following items to the right
+set statusline+=%y                                     " File type
+set statusline+=\ [%{&ff}]                             " File format (unix/dos)
+set statusline+=\ %p%%                                 " Percentage of file
+set statusline+=\ %l:%c\                               " Line:Column position
+
+" Dynamic colors for status line depending on terminal capabilities
+highlight StatusLineMode ctermfg=15 ctermbg=4 cterm=bold guifg=#FFFFFF guibg=#005F87
+highlight StatusLine ctermfg=15 ctermbg=8 cterm=none guifg=#FFFFFF guibg=#3A3A3A
+highlight StatusLineNC ctermfg=8 ctermbg=0 cterm=none guifg=#585858 guibg=#1C1C1C
+EOF
+    fi
+    success "Vim configuration successfully applied!"
+
+    # 3. Configure Neovim compatibility if Neovim is installed
+    if command -v nvim &> /dev/null; then
+        info "Neovim detected. Linking ~/.vimrc for Neovim..."
+        mkdir -p "${HOME}/.config/nvim"
+        if [ -f "${HOME}/.config/nvim/init.vim" ] && [ ! -f "${HOME}/.config/nvim/init.vim.bak" ]; then
+            warn "Existing Neovim config found. Creating backup at ~/.config/nvim/init.vim.bak"
+            mv "${HOME}/.config/nvim/init.vim" "${HOME}/.config/nvim/init.vim.bak"
+        fi
+        
+        # Write init.vim to source .vimrc
+        cat << 'EOF' > "${HOME}/.config/nvim/init.vim"
+set runtimepath^=~/.vim runtimepath+=~/.vim/after
+let &packpath = &runtimepath
+source ~/.vimrc
+EOF
+        success "Neovim successfully configured to source ~/.vimrc"
+    fi
+    echo -e "\n${GREEN}Vim/Neovim configuration complete!${NC}\n"
+}
+
+# Function: Install or Update Tmux Configuration
+do_install_tmux() {
+    echo ""
+    info "=== STARTING TMUX INSTALLATION ==="
+    warn "Tmux configuration is coming soon!"
+    echo ""
+}
+
+# Function: Install or Update All Configuration
+do_install_all() {
+    echo ""
+    info "=== STARTING FULL INSTALLATION (ALL MODULES) ==="
+    do_install_zsh
+    do_install_vim
+    do_install_tmux
+    success "All modules successfully installed!"
 }
 
 # Function: Uninstall / Restore Configuration
@@ -499,7 +696,29 @@ do_uninstall() {
         success "Starship binary successfully removed."
     fi
 
-    # 6. Automatically try to revert default shell to bash
+    # 6. Remove Vim configurations and backups
+    info "Removing Vim configurations..."
+    for file in "${HOME}/.vimrc" "${HOME}/.vimrc.bak"; do
+        if [ -f "$file" ]; then
+            rm -f "$file"
+            success "Removed $file"
+        fi
+    done
+
+    # 7. Remove Neovim configuration link and backups
+    info "Removing Neovim configuration settings..."
+    for file in "${HOME}/.config/nvim/init.vim" "${HOME}/.config/nvim/init.vim.bak"; do
+        if [ -f "$file" ]; then
+            rm -f "$file"
+            success "Removed $file"
+        fi
+    done
+    if [ -d "${HOME}/.config/nvim" ] && [ -z "$(ls -A "${HOME}/.config/nvim" 2>/dev/null)" ]; then
+        rmdir "${HOME}/.config/nvim"
+        success "Removed empty folder ~/.config/nvim"
+    fi
+
+    # 8. Automatically try to revert default shell to bash
     CURRENT_SHELL=$(basename "$SHELL")
     if [[ "$OSTYPE" == "darwin"* ]]; then
         info "On macOS, the default shell is Zsh. No need to revert to bash."
@@ -520,7 +739,7 @@ do_uninstall() {
         fi
     fi
 
-    # 7. Clean up WSL auto-forward from ~/.bashrc if present
+    # 9. Clean up WSL auto-forward from ~/.bashrc if present
     BASHRC="${HOME}/.bashrc"
     if [ -f "$BASHRC" ] && grep -q "Auto-launch Zsh in WSL" "$BASHRC"; then
         info "Removing Zsh auto-forward from ~/.bashrc..."
@@ -536,25 +755,37 @@ do_uninstall() {
 # Interactive Menu Loop
 clear
 echo -e "${PURPLE}==================================================${NC}"
-echo -e "${CYAN}       ZSH & STARSHIP SETUP MANAGER (${VERSION})      ${NC}"
+echo -e "${CYAN}       UNIVERSAL TERMINAL SETUP MANAGER (${VERSION})    ${NC}"
 echo -e "${PURPLE}==================================================${NC}"
 echo -e "Please select an option:"
-echo -e "  ${GREEN}1)${NC} Install / Update Configuration"
-echo -e "  ${RED}2)${NC} Uninstall / Revert to Default"
-echo -e "  ${YELLOW}3)${NC} Exit"
+echo -e "  ${GREEN}1)${NC} Install / Update Zsh & Starship"
+echo -e "  ${GREEN}2)${NC} Install / Update Vim / Neovim"
+echo -e "  ${GREEN}3)${NC} Install / Update Tmux (Soon)"
+echo -e "  ${GREEN}4)${NC} Install / Update ALL (Zsh, Vim, Tmux)"
+echo -e "  ${RED}5)${NC} Uninstall / Revert to Default"
+echo -e "  ${YELLOW}6)${NC} Exit"
 echo -e "${PURPLE}==================================================${NC}"
 
 # Read input directly from tty to support curl execution
-read -r -p "Enter your choice [1-3]: " CHOICE < /dev/tty
+read -r -p "Enter your choice [1-6]: " CHOICE < /dev/tty
 
 case "$CHOICE" in
     1)
-        do_install
+        do_install_zsh
         ;;
     2)
-        do_uninstall
+        do_install_vim
         ;;
     3)
+        do_install_tmux
+        ;;
+    4)
+        do_install_all
+        ;;
+    5)
+        do_uninstall
+        ;;
+    6)
         info "Exiting setup manager. No changes were made."
         exit 0
         ;;

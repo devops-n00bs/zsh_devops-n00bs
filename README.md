@@ -10,8 +10,9 @@ Unlike other configurations, this setup does not require downloading Nerd Fonts 
 
 *   **Zero-Font Required**: Optimized layout using standard characters. Perfect for VPS servers and fresh client environments where custom fonts aren't installed.
 *   **High Performance**: Custom `.zshrc` built without Oh My Zsh (OMZ) for blazing-fast startup speeds.
-*   **Interactive Setup Manager**: A single entry point script `install.sh` manages both installation and complete clean uninstallation.
+*   **Interactive Setup Manager**: A single entry point script `install.sh` manages installation of Zsh, Vim, or Tmux modularly, as well as a clean uninstallation.
 *   **Seamless Plugins**: Essential plugins like `zsh-autosuggestions` and `zsh-syntax-highlighting` are automatically installed and configured.
+*   **Vim/Neovim Optimization**: A universal, plug-less `.vimrc` setup with system clipboard integration, custom statusline, and arrow-key pane navigation.
 *   **Smart Auto CD**: Allows changing directories simply by typing the folder name (no `cd` prefix needed).
 *   **Enhanced History & Completion**: Search terminal history using up/down arrow keys based on command prefix, and navigate completions interactively.
 *   **WSL Auto-Launch**: Automatically configures `~/.bashrc` to forward your terminal session into Zsh instantly on startup (WSL only).
@@ -20,37 +21,43 @@ Unlike other configurations, this setup does not require downloading Nerd Fonts 
 
 ## Quick Installation
 
-To install or update the configuration on WSL, macOS, or any Linux server, run the following command in your terminal:
+To install or update the configurations on WSL, macOS, or any Linux server, run the following command in your terminal:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/devops-n00bs/zsh_devops-n00bs/main/install.sh | bash
 ```
 
-Select **Option `1`** (Install/Update) in the interactive menu. Once done, reload the terminal or run:
+Select your desired option from the interactive menu:
+*   **Option `1`**: Install/Update Zsh & Starship Prompt
+*   **Option `2`**: Install/Update Vim & Neovim Configuration
+*   **Option `4`**: Install/Update ALL configurations (Zsh, Vim, Tmux)
+
+Once done with Zsh setup, reload the terminal or run:
 ```bash
 exec zsh
 ```
 
 > [!NOTE]
-> Selecting **Option `1`** is a complete, single-step setup. The script automatically installs Zsh, Starship, custom plugins, and enhanced CLI tools (`bat` & `eza`/`exa`) on a best-effort basis. Everything is configured and ready to use immediately.
+> The script automatically installs Zsh, Vim, Starship, custom plugins, and enhanced CLI tools (`bat` & `eza`/`exa`) on a best-effort basis depending on the options you choose.
 
 ---
 
 ## Clean Uninstallation (Restore Default)
 
-If you wish to completely clean up and revert your shell settings to their original state (as if it was a fresh install), run the same script:
+If you wish to completely clean up and revert your shell/editor settings to their original state, run the same script:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/devops-n00bs/zsh_devops-n00bs/main/install.sh | bash
 ```
 
-Select **Option `2`** (Uninstall). The script will automatically:
-1. Delete custom configurations and cache files (`~/.zshrc`, `~/.config/starship.toml`, `~/.zcompdump*`, `~/.cache/starship`).
-2. Remove the installed Starship binary.
-3. Clean Zsh command history (`~/.zsh_history`).
-4. Revert your default system shell back to `bash` (on Linux/WSL).
-5. Remove Zsh auto-forward redirect hook from `~/.bashrc` (on WSL).
-6. Automatically exit.
+Select **Option `5`** (Uninstall). The script will automatically:
+1. Delete custom configurations and cache files (`~/.zshrc`, `~/.config/starship.toml`, `~/.vimrc`, `~/.config/nvim/init.vim`).
+2. Revert configuration backups.
+3. Remove the installed Starship binary.
+4. Clean Zsh command history (`~/.zsh_history`).
+5. Revert your default system shell back to `bash` (on Linux/WSL).
+6. Remove Zsh auto-forward redirect hook from `~/.bashrc` (on WSL).
+7. Automatically exit.
 
 ---
 
@@ -60,7 +67,8 @@ Select **Option `2`** (Uninstall). The script will automatically:
 zsh_devops-n00bs/
 ├── install.sh         # Interactive setup manager (installation & cleanup)
 ├── zshrc              # Source Zsh configuration file
-└── starship.toml      # Source Starship prompt layout
+├── starship.toml      # Source Starship prompt layout
+└── vimrc              # Source Vim configuration file
 ```
 
 ---
@@ -98,4 +106,20 @@ Optimize your typing flow with these built-in shortcuts:
 *   **Accept Full Suggestion**: Press the **Right Arrow** key (when cursor is at the end of the line) or **Ctrl + Space** (from anywhere on the line).
 *   **Accept Word-by-Word**: Press **Ctrl + Right Arrow** to accept the suggested command one word at a time.
 *   **Navigate Word-by-Word**: Press **Ctrl + Left Arrow** or **Ctrl + Right Arrow** to skip through words quickly when editing commands.
+
+### Vim / Neovim Shortcuts & Features
+Our universal Vim setup comes with highly optimized key bindings (the `<Leader>` key is set to **`Space`**):
+*   **File Controls**:
+    *   `Space` + `w` : Save file (`:w`)
+    *   `Space` + `q` : Exit file (`:q`)
+    *   `Space` + `x` : Save and exit (`:x`)
+*   **Search**:
+    *   `Esc` or `Space` + `c` : Clear search highlighting
+*   **Window / Pane Split Navigation**:
+    *   `Space` + `vs` : Split window vertically (`:vsplit`)
+    *   `Space` + `hs` : Split window horizontally (`:split`)
+    *   `Ctrl` + **Arrow keys** : Move cursor between split panes seamlessly
+*   **Mouse Support**: Drag to resize splits, click to place the cursor, and use the scroll wheel natively.
+*   **System Clipboard**: Integrates natively with the system clipboard for copy/paste where supported.
+
 
