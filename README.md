@@ -31,6 +31,9 @@ Select **Option `1`** (Install/Update) in the interactive menu. Once done, reloa
 exec zsh
 ```
 
+> [!NOTE]
+> Selecting **Option `1`** is a complete, single-step setup. The script automatically installs Zsh, Starship, custom plugins, and enhanced CLI tools (`bat` & `eza`/`exa`) on a best-effort basis. Everything is configured and ready to use immediately.
+
 ---
 
 ## Clean Uninstallation (Restore Default)
