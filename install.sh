@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ==============================================================================
-# AUTOMATIC ZSH CONFIGURATION INSTALLER
+# AUTOMATIC ZSH CONFIGURATION MANAGER (Interactive Menu)
 # Works on macOS, WSL, and Linux Server
 # ==============================================================================
 
@@ -19,6 +19,8 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 info() { echo -e "${BLUE}[INFO]${NC} $*"; }
@@ -26,133 +28,221 @@ warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
 error() { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
 success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
 
-# 1. Detect environment & dependencies
-info "Memeriksa dependensi..."
-MISSING_DEPS=()
-for cmd in git curl zsh; do
-    if ! command -v "$cmd" &> /dev/null; then
-        MISSING_DEPS+=("$cmd")
-    fi
-done
-
-if [ ${#MISSING_DEPS[@]} -ne 0 ]; then
-    warn "Dependensi berikut belum terinstal: ${MISSING_DEPS[*]}"
-    info "Mencoba menginstal dependensi secara otomatis..."
-    
-    # Tentukan apakah perlu sudo
-    SUDO=""
-    if [ "$(id -u)" -ne 0 ]; then
-        SUDO="sudo"
-    fi
-    
-    # Deteksi Sistem Operasi / Package Manager
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        if ! command -v brew &> /dev/null; then
-            error "Homebrew tidak ditemukan. Harap instal Homebrew terlebih dahulu atau pasang dependensi secara manual."
-        fi
-        info "Menginstal via Homebrew..."
-        brew install "${MISSING_DEPS[@]}"
-    elif [ -f /etc/debian_version ]; then
-        info "Menginstal via apt-get..."
-        $SUDO apt-get update
-        $SUDO apt-get install -y "${MISSING_DEPS[@]}"
-    elif [ -f /etc/redhat-release ] || [ -f /etc/system-release ]; then
-        info "Menginstal via dnf/yum..."
-        if command -v dnf &> /dev/null; then
-            $SUDO dnf install -y "${MISSING_DEPS[@]}"
-        else
-            $SUDO yum install -y "${MISSING_DEPS[@]}"
-        fi
-    elif [ -f /etc/arch-release ]; then
-        info "Menginstal via pacman..."
-        $SUDO pacman -Syu --noconfirm "${MISSING_DEPS[@]}"
-    else
-        error "Sistem operasi tidak didukung untuk instalasi otomatis. Harap pasang secara manual: ${MISSING_DEPS[*]}"
-    fi
-    success "Dependensi berhasil diinstal."
-else
-    info "Semua dependensi dasar terpenuhi."
-fi
-
 # Detect if script is run locally or downloaded directly
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" &>/dev/null && pwd)"
 IS_LOCAL=false
 if [[ -f "${SCRIPT_DIR}/zshrc" && -f "${SCRIPT_DIR}/starship.toml" ]]; then
     IS_LOCAL=true
-    info "Menjalankan installer dari salinan lokal di: ${SCRIPT_DIR}"
 fi
 
-# 2. Install Starship Prompt
-if ! command -v starship &> /dev/null; then
-    info "Menginstal Starship Prompt..."
-    curl -sS https://starship.rs/install.sh | sh -s -- --yes
-    success "Starship berhasil diinstal."
-else
-    info "Starship sudah terinstal."
-fi
-
-# 3. Setup plugin directory and download plugins
-PLUGIN_DIR="${HOME}/.zsh/plugins"
-info "Mengatur plugin Zsh..."
-mkdir -p "${PLUGIN_DIR}"
-
-# Helper to clone or update plugins
-setup_plugin() {
-    local name=$1
-    local url=$2
-    local path="${PLUGIN_DIR}/${name}"
+# Function: Install or Update Configuration
+do_install() {
+    echo ""
+    info "=== MEMULAI INSTALASI / PEMBARUAN ==="
     
-    if [ -d "$path" ]; then
-        info "Memperbarui plugin ${name}..."
-        git -C "$path" pull
+    # 1. Detect environment & dependencies
+    info "Memeriksa dependensi..."
+    MISSING_DEPS=()
+    for cmd in git curl zsh; do
+        if ! command -v "$cmd" &> /dev/null; then
+            MISSING_DEPS+=("$cmd")
+        fi
+    done
+
+    if [ ${#MISSING_DEPS[@]} -ne 0 ]; then
+        warn "Dependensi berikut belum terinstal: ${MISSING_DEPS[*]}"
+        info "Mencoba menginstal dependensi secara otomatis..."
+        
+        # Tentukan apakah perlu sudo
+        SUDO=""
+        if [ "$(id -u)" -ne 0 ]; then
+            SUDO="sudo"
+        fi
+        
+        # Deteksi Sistem Operasi / Package Manager
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            if ! command -v brew &> /dev/null; then
+                error "Homebrew tidak ditemukan. Harap instal Homebrew terlebih dahulu atau pasang dependensi secara manual."
+            fi
+            info "Menginstal via Homebrew..."
+            brew install "${MISSING_DEPS[@]}"
+        elif [ -f /etc/debian_version ]; then
+            info "Menginstal via apt-get..."
+            $SUDO apt-get update
+            $SUDO apt-get install -y "${MISSING_DEPS[@]}"
+        elif [ -f /etc/redhat-release ] || [ -f /etc/system-release ]; then
+            info "Menginstal via dnf/yum..."
+            if command -v dnf &> /dev/null; then
+                $SUDO dnf install -y "${MISSING_DEPS[@]}"
+            else
+                $SUDO yum install -y "${MISSING_DEPS[@]}"
+            fi
+        elif [ -f /etc/arch-release ]; then
+            info "Menginstal via pacman..."
+            $SUDO pacman -Syu --noconfirm "${MISSING_DEPS[@]}"
+        else
+            error "Sistem operasi tidak didukung untuk instalasi otomatis. Harap pasang secara manual: ${MISSING_DEPS[*]}"
+        fi
+        success "Dependensi berhasil diinstal."
     else
-        info "Mengunduh plugin ${name}..."
-        git clone --depth 1 "$url" "$path"
+        info "Semua dependensi dasar terpenuhi."
     fi
+
+    # 2. Install Starship Prompt
+    if ! command -v starship &> /dev/null; then
+        info "Menginstal Starship Prompt..."
+        curl -sS https://starship.rs/install.sh | sh -s -- --yes
+        success "Starship berhasil diinstal."
+    else
+        info "Starship sudah terinstal."
+    fi
+
+    # 3. Setup plugin directory and download plugins
+    PLUGIN_DIR="${HOME}/.zsh/plugins"
+    info "Mengatur plugin Zsh..."
+    mkdir -p "${PLUGIN_DIR}"
+
+    # Helper to clone or update plugins
+    setup_plugin() {
+        local name=$1
+        local url=$2
+        local path="${PLUGIN_DIR}/${name}"
+        
+        if [ -d "$path" ]; then
+            info "Memperbarui plugin ${name}..."
+            git -C "$path" pull
+        else
+            info "Mengunduh plugin ${name}..."
+            git clone --depth 1 "$url" "$path"
+        fi
+    }
+
+    setup_plugin "zsh-autosuggestions" "https://github.com/zsh-users/zsh-autosuggestions.git"
+    setup_plugin "zsh-syntax-highlighting" "https://github.com/zsh-users/zsh-syntax-highlighting.git"
+
+    # 4. Install configuration files
+    info "Menerapkan file konfigurasi..."
+
+    # Setup .zshrc
+    if [ -f "${HOME}/.zshrc" ] && [ ! -f "${HOME}/.zshrc.bak" ]; then
+        warn "Menemukan file ~/.zshrc yang sudah ada. Membuat cadangan di ~/.zshrc.bak"
+        mv "${HOME}/.zshrc" "${HOME}/.zshrc.bak"
+    fi
+
+    if [ "$IS_LOCAL" = true ]; then
+        cp "${SCRIPT_DIR}/zshrc" "${HOME}/.zshrc"
+    else
+        info "Mengunduh file zshrc dari GitHub..."
+        curl -fsSL "${RAW_URL}/zshrc" -o "${HOME}/.zshrc"
+    fi
+
+    # Setup starship.toml
+    mkdir -p "${HOME}/.config"
+    if [ -f "${HOME}/.config/starship.toml" ] && [ ! -f "${HOME}/.config/starship.toml.bak" ]; then
+        warn "Menemukan file ~/.config/starship.toml yang sudah ada. Membuat cadangan di ~/.config/starship.toml.bak"
+        mv "${HOME}/.config/starship.toml" "${HOME}/.config/starship.toml.bak"
+    fi
+
+    if [ "$IS_LOCAL" = true ]; then
+        cp "${SCRIPT_DIR}/starship.toml" "${HOME}/.config/starship.toml"
+    else
+        info "Mengunduh file starship.toml dari GitHub..."
+        curl -fsSL "${RAW_URL}/starship.toml" -o "${HOME}/.config/starship.toml"
+    fi
+
+    success "Konfigurasi Zsh dan Starship telah diterapkan!"
+
+    # 5. Suggest shell change
+    CURRENT_SHELL=$(basename "$SHELL")
+    if [ "$CURRENT_SHELL" != "zsh" ]; then
+        warn "Shell saat ini adalah ${CURRENT_SHELL}."
+        echo -e "${YELLOW}Jalankan perintah berikut untuk mengubah default shell Anda menjadi zsh:${NC}"
+        echo -e "  chsh -s \$(which zsh)"
+    fi
+
+    echo -e "\n${GREEN}Instalasi selesai! Silakan buka kembali terminal Anda atau jalankan:${NC}"
+    echo -e "  exec zsh\n"
 }
 
-setup_plugin "zsh-autosuggestions" "https://github.com/zsh-users/zsh-autosuggestions.git"
-setup_plugin "zsh-syntax-highlighting" "https://github.com/zsh-users/zsh-syntax-highlighting.git"
+# Function: Uninstall / Restore Configuration
+do_uninstall() {
+    echo ""
+    info "=== MEMULAI REMOVAL / RESTORE ==="
+    
+    # 1. Restore .zshrc
+    info "Mengembalikan konfigurasi .zshrc..."
+    if [ -f "${HOME}/.zshrc.bak" ]; then
+        mv "${HOME}/.zshrc.bak" "${HOME}/.zshrc"
+        success "Mengembalikan file ~/.zshrc dari cadangan ~/.zshrc.bak"
+    else
+        if [ -f "${HOME}/.zshrc" ]; then
+            rm "${HOME}/.zshrc"
+            success "Menghapus ~/.zshrc karena tidak ada cadangan (.zshrc.bak) sebelumnya."
+        else
+            info "~/.zshrc sudah bersih."
+        fi
+    fi
 
-# 4. Install configuration files
-info "Menerapkan file konfigurasi..."
+    # 2. Restore starship.toml
+    info "Mengembalikan konfigurasi Starship..."
+    if [ -f "${HOME}/.config/starship.toml.bak" ]; then
+        mv "${HOME}/.config/starship.toml.bak" "${HOME}/.config/starship.toml"
+        success "Mengembalikan file ~/.config/starship.toml dari cadangan ~/.config/starship.toml.bak"
+    else
+        if [ -f "${HOME}/.config/starship.toml" ]; then
+            rm "${HOME}/.config/starship.toml"
+            success "Menghapus ~/.config/starship.toml."
+        fi
+    fi
 
-# Setup .zshrc
-if [ -f "${HOME}/.zshrc" ]; then
-    warn "Menemukan file ~/.zshrc yang sudah ada. Membuat cadangan di ~/.zshrc.bak"
-    mv "${HOME}/.zshrc" "${HOME}/.zshrc.bak"
-fi
+    # 3. Clean up plugins
+    info "Membersihkan plugin..."
+    if [ -d "${HOME}/.zsh/plugins" ]; then
+        rm -rf "${HOME}/.zsh/plugins"
+        success "Menghapus folder plugin ~/.zsh/plugins"
+    fi
 
-if [ "$IS_LOCAL" = true ]; then
-    cp "${SCRIPT_DIR}/zshrc" "${HOME}/.zshrc"
-else
-    info "Mengunduh file zshrc dari GitHub..."
-    curl -fsSL "${RAW_URL}/zshrc" -o "${HOME}/.zshrc"
-fi
+    # 4. Suggest shell change back to bash
+    CURRENT_SHELL=$(basename "$SHELL")
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        info "Di macOS, shell default adalah zsh."
+    else
+        if [ "$CURRENT_SHELL" = "zsh" ] && command -v bash &> /dev/null; then
+            warn "Shell aktif saat ini adalah Zsh."
+            echo -e "${YELLOW}Untuk kembali menggunakan bash sebagai shell default, jalankan:${NC}"
+            echo -e "  chsh -s \$(which bash)"
+        fi
+    fi
 
-# Setup starship.toml
-mkdir -p "${HOME}/.config"
-if [ -f "${HOME}/.config/starship.toml" ]; then
-    warn "Menemukan file ~/.config/starship.toml yang sudah ada. Membuat cadangan di ~/.config/starship.toml.bak"
-    mv "${HOME}/.config/starship.toml" "${HOME}/.config/starship.toml.bak"
-fi
+    echo -e "\n${GREEN}Pembersihan/Pengembalian selesai! Silakan buka kembali terminal Anda atau reload shell.${NC}\n"
+}
 
-if [ "$IS_LOCAL" = true ]; then
-    cp "${SCRIPT_DIR}/starship.toml" "${HOME}/.config/starship.toml"
-else
-    info "Mengunduh file starship.toml dari GitHub..."
-    curl -fsSL "${RAW_URL}/starship.toml" -o "${HOME}/.config/starship.toml"
-fi
+# Interactive Menu Loop
+clear
+echo -e "${PURPLE}==================================================${NC}"
+echo -e "${CYAN}           ZSH & STARSHIP SETUP MANAGER           ${NC}"
+echo -e "${PURPLE}==================================================${NC}"
+echo -e "Silakan pilih tindakan yang ingin Anda lakukan:"
+echo -e "  ${GREEN}1)${NC} Pasang / Perbarui Konfigurasi (Install/Update)"
+echo -e "  ${RED}2)${NC} Hapus Konfigurasi / Kembali ke Default (Uninstall)"
+echo -e "  ${YELLOW}3)${NC} Keluar (Exit)"
+echo -e "${PURPLE}==================================================${NC}"
 
-success "Konfigurasi Zsh dan Starship telah diterapkan!"
+# Read input directly from tty to support curl execution
+read -r -p "Masukkan pilihan Anda [1-3]: " CHOICE < /dev/tty
 
-# 5. Suggest shell change
-CURRENT_SHELL=$(basename "$SHELL")
-if [ "$CURRENT_SHELL" != "zsh" ]; then
-    warn "Shell saat ini adalah ${CURRENT_SHELL}."
-    echo -e "${YELLOW}Jalankan perintah berikut untuk mengubah default shell Anda menjadi zsh:${NC}"
-    echo -e "  chsh -s \$(which zsh)"
-fi
-
-echo -e "\n${GREEN}Instalasi selesai! Silakan buka kembali terminal Anda atau jalankan:${NC}"
-echo -e "  exec zsh\n"
+case "$CHOICE" in
+    1)
+        do_install
+        ;;
+    2)
+        do_uninstall
+        ;;
+    3)
+        info "Keluar dari setup manager. Tidak ada perubahan yang dibuat."
+        exit 0
+        ;;
+    *)
+        error "Pilihan tidak valid. Silakan jalankan kembali script."
+        ;;
+esac
