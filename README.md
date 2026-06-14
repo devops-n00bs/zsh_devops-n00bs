@@ -14,6 +14,7 @@ Unlike other configurations, this setup does not require downloading Nerd Fonts 
 *   **Seamless Plugins**: Essential plugins like `zsh-autosuggestions` and `zsh-syntax-highlighting` are automatically installed and configured.
 *   **Smart Auto CD**: Allows changing directories simply by typing the folder name (no `cd` prefix needed).
 *   **Enhanced History & Completion**: Search terminal history using up/down arrow keys based on command prefix, and navigate completions interactively.
+*   **WSL Auto-Launch**: Automatically configures `~/.bashrc` to forward your terminal session into Zsh instantly on startup (WSL only).
 
 ---
 
@@ -45,7 +46,8 @@ Select **Option `2`** (Uninstall). The script will automatically:
 2. Remove the installed Starship binary.
 3. Clean Zsh command history (`~/.zsh_history`).
 4. Revert your default system shell back to `bash` (on Linux/WSL).
-5. Automatically exit.
+5. Remove Zsh auto-forward redirect hook from `~/.bashrc` (on WSL).
+6. Automatically exit.
 
 ---
 
