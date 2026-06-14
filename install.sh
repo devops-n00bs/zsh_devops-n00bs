@@ -132,6 +132,11 @@ fi
 
 # Setup starship.toml
 mkdir -p "${HOME}/.config"
+if [ -f "${HOME}/.config/starship.toml" ]; then
+    warn "Menemukan file ~/.config/starship.toml yang sudah ada. Membuat cadangan di ~/.config/starship.toml.bak"
+    mv "${HOME}/.config/starship.toml" "${HOME}/.config/starship.toml.bak"
+fi
+
 if [ "$IS_LOCAL" = true ]; then
     cp "${SCRIPT_DIR}/starship.toml" "${HOME}/.config/starship.toml"
 else
