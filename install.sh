@@ -65,6 +65,38 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     ROOT_HOME="/var/root"
 fi
 
+# Helper to determine module status label
+get_status_label() {
+    local path=$1
+    local is_root=$2
+    if [ "$is_root" = true ]; then
+        if sudo [ -f "$path" ] 2>/dev/null; then
+            echo -e "${GREEN}[INSTALLED]${NC}"
+        else
+            echo -e "${RED}[NOT INSTALLED]${NC}"
+        fi
+    else
+        if [ -f "$path" ]; then
+            echo -e "${GREEN}[INSTALLED]${NC}"
+        else
+            echo -e "${RED}[NOT INSTALLED]${NC}"
+        fi
+    fi
+}
+
+# Helper to check sudo status
+check_sudo() {
+    if command -v sudo &> /dev/null; then
+        if sudo -n true 2>/dev/null; then
+            echo -e "${GREEN}Detected (No Password)${NC}"
+        else
+            echo -e "${YELLOW}Detected (Requires Password)${NC}"
+        fi
+    else
+        echo -e "${RED}Not Available${NC}"
+    fi
+}
+
 # Helper: Check sudo and ask to apply configuration to root
 check_and_apply_to_root() {
     local module=$1
