@@ -9,7 +9,7 @@
 set -euo pipefail
 
 # Version
-VERSION="v1.1.1"
+VERSION="v1.1.2"
 
 # Colors for output
 RED='\033[0;31m'
@@ -30,6 +30,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" &>/dev/null && pwd)"
 IS_LOCAL=false
 if [[ -f "${SCRIPT_DIR}/zshrc" && -f "${SCRIPT_DIR}/starship.toml" ]]; then
     IS_LOCAL=true
+fi
+
+# Detect if running in WSL
+IS_WSL=false
+if [ -f /proc/version ] && grep -qi microsoft /proc/version; then
+    IS_WSL=true
 fi
 
 # Function: Install or Update Configuration
@@ -417,6 +423,19 @@ EOF
         echo -e "  chsh -s \$(which zsh)"
     fi
 
+    if [ "$IS_WSL" = true ]; then
+        info "WSL environment detected. Ensuring Zsh auto-launches on startup..."
+        BASHRC="${HOME}/.bashrc"
+        if [ -f "$BASHRC" ]; then
+            if ! grep -q "Auto-launch Zsh in WSL" "$BASHRC"; then
+                echo -e "\n# Auto-launch Zsh in WSL sessions\nif [ -t 1 ] && command -v zsh &> /dev/null; then\n    exec zsh\nfi" >> "$BASHRC"
+                success "Added Zsh auto-forward to ~/.bashrc"
+            else
+                info "Zsh auto-forward already exists in ~/.bashrc."
+            fi
+        fi
+    fi
+
     echo -e "\n${GREEN}Installation complete! Please restart your terminal or run:${NC}"
     echo -e "  exec zsh\n"
 }
@@ -489,6 +508,14 @@ do_uninstall() {
                 info "Current default shell is not Zsh ($CURRENT_SHELL). Revert skipped."
             fi
         fi
+    fi
+
+    # 7. Clean up WSL auto-forward from ~/.bashrc if present
+    BASHRC="${HOME}/.bashrc"
+    if [ -f "$BASHRC" ] && grep -q "Auto-launch Zsh in WSL" "$BASHRC"; then
+        info "Removing Zsh auto-forward from ~/.bashrc..."
+        sed -i '/Auto-launch Zsh in WSL/,/fi/d' "$BASHRC"
+        success "Removed Zsh auto-forward from ~/.bashrc"
     fi
 
     echo -e "\n${GREEN}Cleanup complete! All custom configurations, binaries, and caches have been fully removed.${NC}"
