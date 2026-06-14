@@ -9,7 +9,7 @@
 set -euo pipefail
 
 # Version
-VERSION="v1.1.0"
+VERSION="v1.1.1"
 
 # Colors for output
 RED='\033[0;31m'
@@ -35,10 +35,10 @@ fi
 # Function: Install or Update Configuration
 do_install() {
     echo ""
-    info "=== MEMULAI INSTALASI / PEMBARUAN ==="
+    info "=== STARTING INSTALLATION / UPDATE ==="
     
     # 1. Detect environment & dependencies
-    info "Memeriksa dependensi..."
+    info "Checking core dependencies..."
     MISSING_DEPS=()
     for cmd in git curl zsh; do
         if ! command -v "$cmd" &> /dev/null; then
@@ -47,46 +47,46 @@ do_install() {
     done
 
     if [ ${#MISSING_DEPS[@]} -ne 0 ]; then
-        warn "Dependensi berikut belum terinstal: ${MISSING_DEPS[*]}"
-        info "Mencoba menginstal dependensi secara otomatis..."
+        warn "The following core dependencies are missing: ${MISSING_DEPS[*]}"
+        info "Attempting to install dependencies automatically..."
         
-        # Tentukan apakah perlu sudo
+        # Determine if sudo is needed
         SUDO=""
         if [ "$(id -u)" -ne 0 ]; then
             SUDO="sudo"
         fi
         
-        # Deteksi Sistem Operasi / Package Manager
+        # Detect OS / Package Manager
         if [[ "$OSTYPE" == "darwin"* ]]; then
             if ! command -v brew &> /dev/null; then
-                error "Homebrew tidak ditemukan. Harap instal Homebrew terlebih dahulu atau pasang dependensi secara manual."
+                error "Homebrew not found. Please install Homebrew first or install dependencies manually."
             fi
-            info "Menginstal via Homebrew..."
+            info "Installing via Homebrew..."
             brew install "${MISSING_DEPS[@]}"
         elif [ -f /etc/debian_version ]; then
-            info "Menginstal via apt-get..."
+            info "Installing via apt-get..."
             $SUDO apt-get update
             $SUDO apt-get install -y "${MISSING_DEPS[@]}"
         elif [ -f /etc/redhat-release ] || [ -f /etc/system-release ]; then
-            info "Menginstal via dnf/yum..."
+            info "Installing via dnf/yum..."
             if command -v dnf &> /dev/null; then
                 $SUDO dnf install -y "${MISSING_DEPS[@]}"
             else
                 $SUDO yum install -y "${MISSING_DEPS[@]}"
             fi
         elif [ -f /etc/arch-release ]; then
-            info "Menginstal via pacman..."
+            info "Installing via pacman..."
             $SUDO pacman -Syu --noconfirm "${MISSING_DEPS[@]}"
         else
-            error "Sistem operasi tidak didukung untuk instalasi otomatis. Harap pasang secara manual: ${MISSING_DEPS[*]}"
+            error "Operating system not supported for auto-installation. Please install manually: ${MISSING_DEPS[*]}"
         fi
-        success "Dependensi berhasil diinstal."
+        success "Core dependencies successfully installed."
     else
-        info "Semua dependensi dasar terpenuhi."
+        info "All core dependencies are met."
     fi
 
     # Try to install optional modern CLI tools (bat and eza/exa) on best-effort basis
-    info "Memeriksa alat pendukung opsional (bat & eza)..."
+    info "Checking optional CLI enhancements (bat & eza)..."
     OPTIONAL_DEPS=()
     if ! command -v bat &> /dev/null && ! command -v batcat &> /dev/null; then
         OPTIONAL_DEPS+=("bat")
@@ -96,13 +96,13 @@ do_install() {
     fi
 
     if [ ${#OPTIONAL_DEPS[@]} -ne 0 ]; then
-        info "Mencoba menginstal alat opsional secara otomatis: ${OPTIONAL_DEPS[*]}"
+        info "Attempting to install optional tools: ${OPTIONAL_DEPS[*]}"
         SUDO=""
         if [ "$(id -u)" -ne 0 ]; then
             SUDO="sudo"
         fi
         
-        # Nonaktifkan exit-on-error sementara agar kegagalan alat opsional tidak membatalkan seluruh proses
+        # Temporarily disable exit-on-error so optional packages don't abort setup
         set +e
         if [[ "$OSTYPE" == "darwin"* ]]; then
             if command -v brew &> /dev/null; then
@@ -110,7 +110,7 @@ do_install() {
             fi
         elif [ -f /etc/debian_version ]; then
             $SUDO apt-get install -y "${OPTIONAL_DEPS[@]}"
-            # Jika eza tidak ada (Ubuntu lama), coba install exa sebagai fallback
+            # If eza is missing (older Ubuntu), try installing exa as fallback
             if ! command -v eza &> /dev/null && ! command -v exa &> /dev/null; then
                 $SUDO apt-get install -y exa
             fi
@@ -128,13 +128,13 @@ do_install() {
 
     # 2. Install Starship Prompt
     if ! command -v starship &> /dev/null; then
-        info "Menginstal Starship Prompt..."
+        info "Installing Starship Prompt..."
         if [[ "$OSTYPE" == "darwin"* ]]; then
             if command -v brew &> /dev/null; then
-                info "Menginstal via Homebrew..."
+                info "Installing via Homebrew..."
                 brew install starship
             else
-                warn "Homebrew tidak ditemukan. Menggunakan installer official (mungkin membutuhkan password sudo)..."
+                warn "Homebrew not found. Using official installer script (may require sudo password)..."
                 curl -sS https://starship.rs/install.sh | sudo sh -s -- --yes
             fi
         else
@@ -145,14 +145,14 @@ do_install() {
             fi
             curl -sS https://starship.rs/install.sh | $SUDO sh -s -- --yes
         fi
-        success "Starship berhasil diinstal."
+        success "Starship successfully installed."
     else
-        info "Starship sudah terinstal."
+        info "Starship is already installed."
     fi
 
     # 3. Setup plugin directory and download plugins
     PLUGIN_DIR="${HOME}/.zsh/plugins"
-    info "Mengatur plugin Zsh..."
+    info "Setting up Zsh plugins..."
     mkdir -p "${PLUGIN_DIR}"
 
     # Helper to clone or update plugins
@@ -162,10 +162,10 @@ do_install() {
         local path="${PLUGIN_DIR}/${name}"
         
         if [ -d "$path" ]; then
-            info "Memperbarui plugin ${name}..."
+            info "Updating plugin ${name}..."
             git -C "$path" pull
         else
-            info "Mengunduh plugin ${name}..."
+            info "Downloading plugin ${name}..."
             git clone --depth 1 "$url" "$path"
         fi
     }
@@ -174,18 +174,18 @@ do_install() {
     setup_plugin "zsh-syntax-highlighting" "https://github.com/zsh-users/zsh-syntax-highlighting.git"
 
     # 4. Install configuration files
-    info "Menerapkan file konfigurasi..."
+    info "Applying configuration files..."
 
     # Setup .zshrc
     if [ -f "${HOME}/.zshrc" ] && [ ! -f "${HOME}/.zshrc.bak" ]; then
-        warn "Menemukan file ~/.zshrc yang sudah ada. Membuat cadangan di ~/.zshrc.bak"
+        warn "Existing ~/.zshrc found. Creating backup at ~/.zshrc.bak"
         mv "${HOME}/.zshrc" "${HOME}/.zshrc.bak"
     fi
 
     if [ "$IS_LOCAL" = true ]; then
         cp "${SCRIPT_DIR}/zshrc" "${HOME}/.zshrc"
     else
-        info "Menulis file .zshrc..."
+        info "Writing ~/.zshrc configuration..."
         cat << 'EOF' > "${HOME}/.zshrc"
 # ==============================================================================
 # ZSH CONFIGURATION (Custom, Fast, and Clean)
@@ -233,6 +233,9 @@ zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:
 # ------------------------------------------------------------------------------
 # Use emacs keybindings by default (even if EDITOR is set to vi)
 bindkey -e
+
+# Auto CD: typing a directory name directly will cd into it
+setopt autocd
 
 # Up/Down arrow search history based on prefix
 autoload -U up-line-or-beginning-search
@@ -306,14 +309,14 @@ EOF
     # Setup starship.toml
     mkdir -p "${HOME}/.config"
     if [ -f "${HOME}/.config/starship.toml" ] && [ ! -f "${HOME}/.config/starship.toml.bak" ]; then
-        warn "Menemukan file ~/.config/starship.toml yang sudah ada. Membuat cadangan di ~/.config/starship.toml.bak"
+        warn "Existing ~/.config/starship.toml found. Creating backup at ~/.config/starship.toml.bak"
         mv "${HOME}/.config/starship.toml" "${HOME}/.config/starship.toml.bak"
     fi
 
     if [ "$IS_LOCAL" = true ]; then
         cp "${SCRIPT_DIR}/starship.toml" "${HOME}/.config/starship.toml"
     else
-        info "Menulis file starship.toml..."
+        info "Writing ~/.config/starship.toml..."
         cat << 'EOF' > "${HOME}/.config/starship.toml"
 # ==============================================================================
 # STARSHIP CONFIGURATION (Premium & Sleek Theme)
@@ -404,108 +407,108 @@ format = "via [$symbol($version)]($style) "
 EOF
     fi
 
-    success "Konfigurasi Zsh dan Starship telah diterapkan!"
+    success "Zsh and Starship configurations successfully applied!"
 
     # 5. Suggest shell change
     CURRENT_SHELL=$(basename "$SHELL")
     if [ "$CURRENT_SHELL" != "zsh" ]; then
-        warn "Shell saat ini adalah ${CURRENT_SHELL}."
-        echo -e "${YELLOW}Jalankan perintah berikut untuk mengubah default shell Anda menjadi zsh:${NC}"
+        warn "Current shell is ${CURRENT_SHELL}."
+        echo -e "${YELLOW}Run the following command to change your default shell to Zsh:${NC}"
         echo -e "  chsh -s \$(which zsh)"
     fi
 
-    echo -e "\n${GREEN}Instalasi selesai! Silakan buka kembali terminal Anda atau jalankan:${NC}"
+    echo -e "\n${GREEN}Installation complete! Please restart your terminal or run:${NC}"
     echo -e "  exec zsh\n"
 }
 
 # Function: Uninstall / Restore Configuration
 do_uninstall() {
     echo ""
-    info "=== MEMULAI PEMBERSIHAN TOTAL (UNINSTALL) ==="
+    info "=== STARTING SYSTEM CLEANUP (UNINSTALL) ==="
     
     # 1. Remove Zsh configuration and backups
-    info "Menghapus file konfigurasi Zsh..."
+    info "Removing Zsh configuration files..."
     for file in "${HOME}/.zshrc" "${HOME}/.zshrc.bak"; do
         if [ -f "$file" ]; then
             rm -f "$file"
-            success "Menghapus $file"
+            success "Removed $file"
         fi
     done
 
     # 2. Remove Starship configuration and backups
-    info "Menghapus konfigurasi Starship..."
+    info "Removing Starship configurations..."
     for file in "${HOME}/.config/starship.toml" "${HOME}/.config/starship.toml.bak"; do
         if [ -f "$file" ]; then
             rm -f "$file"
-            success "Menghapus $file"
+            success "Removed $file"
         fi
     done
 
     # 3. Clean up plugins and entire .zsh directory
-    info "Membersihkan seluruh folder plugin dan folder ~/.zsh..."
+    info "Cleaning up Zsh plugins folder..."
     if [ -d "${HOME}/.zsh" ]; then
         rm -rf "${HOME}/.zsh"
-        success "Menghapus folder ~/.zsh"
+        success "Removed folder ~/.zsh"
     fi
 
-    # 4. Clean up cache & riwayat terminal
-    info "Membersihkan cache & riwayat terminal..."
+    # 4. Clean up cache and history
+    info "Cleaning up terminal caches and history..."
     rm -f "${HOME}/.zcompdump"*
     rm -f "${HOME}/.zsh_history"
     rm -rf "${HOME}/.cache/starship"
-    success "Cache zcompdump, cache Starship, dan riwayat Zsh (~/.zsh_history) telah dibersihkan."
+    success "Zcompdump cache, Starship cache, and Zsh history (~/.zsh_history) successfully cleared."
 
     # 5. Remove Starship binary if installed
     if command -v starship &> /dev/null; then
         STARSHIP_PATH=$(which starship)
-        info "Menghapus binary Starship di $STARSHIP_PATH..."
+        info "Removing Starship binary at $STARSHIP_PATH..."
         SUDO=""
         if [ "$(id -u)" -ne 0 ]; then
             SUDO="sudo"
         fi
         $SUDO rm -f "$STARSHIP_PATH"
-        success "Starship binary berhasil dihapus."
+        success "Starship binary successfully removed."
     fi
 
     # 6. Automatically try to revert default shell to bash
     CURRENT_SHELL=$(basename "$SHELL")
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        info "Di macOS, shell default standar adalah zsh. Tidak perlu diubah ke bash."
+        info "On macOS, the default shell is Zsh. No need to revert to bash."
     else
         if command -v bash &> /dev/null; then
-            info "Mengubah default shell kembali ke bash..."
+            info "Reverting default shell back to bash..."
             BASH_PATH=$(which bash)
             if [ "$CURRENT_SHELL" = "zsh" ]; then
-                # Ganti shell secara interaktif (bisa meminta password user)
+                # Revert shell interactively (may ask for user password)
                 if chsh -s "$BASH_PATH" < /dev/tty; then
-                    success "Default shell berhasil dikembalikan ke bash ($BASH_PATH)."
+                    success "Default shell successfully reverted to bash ($BASH_PATH)."
                 else
-                    warn "Gagal mengubah shell secara otomatis. Silakan jalankan manual: chsh -s $BASH_PATH"
+                    warn "Failed to change shell automatically. Please run manually: chsh -s $BASH_PATH"
                 fi
             else
-                info "Shell default saat ini bukan zsh ($CURRENT_SHELL), tidak perlu mengubah shell."
+                info "Current default shell is not Zsh ($CURRENT_SHELL). Revert skipped."
             fi
         fi
     fi
 
-    echo -e "\n${GREEN}Pembersihan selesai! Semua file kustom, binary, & cache telah dihapus bersih seperti semula.${NC}"
-    echo -e "${YELLOW}Silakan restart terminal atau buka sesi terminal baru untuk melihat efeknya.${NC}\n"
+    echo -e "\n${GREEN}Cleanup complete! All custom configurations, binaries, and caches have been fully removed.${NC}"
+    echo -e "${YELLOW}Please restart your terminal or open a new session to see changes.${NC}\n"
     exit 0
 }
 
 # Interactive Menu Loop
 clear
 echo -e "${PURPLE}==================================================${NC}"
-echo -e "${CYAN}        ZSH & STARSHIP SETUP MANAGER (${VERSION})       ${NC}"
+echo -e "${CYAN}       ZSH & STARSHIP SETUP MANAGER (${VERSION})      ${NC}"
 echo -e "${PURPLE}==================================================${NC}"
-echo -e "Silakan pilih tindakan yang ingin Anda lakukan:"
-echo -e "  ${GREEN}1)${NC} Pasang / Perbarui Konfigurasi (Install/Update)"
-echo -e "  ${RED}2)${NC} Hapus Konfigurasi / Kembali ke Default (Uninstall)"
-echo -e "  ${YELLOW}3)${NC} Keluar (Exit)"
+echo -e "Please select an option:"
+echo -e "  ${GREEN}1)${NC} Install / Update Configuration"
+echo -e "  ${RED}2)${NC} Uninstall / Revert to Default"
+echo -e "  ${YELLOW}3)${NC} Exit"
 echo -e "${PURPLE}==================================================${NC}"
 
 # Read input directly from tty to support curl execution
-read -r -p "Masukkan pilihan Anda [1-3]: " CHOICE < /dev/tty
+read -r -p "Enter your choice [1-3]: " CHOICE < /dev/tty
 
 case "$CHOICE" in
     1)
@@ -515,10 +518,10 @@ case "$CHOICE" in
         do_uninstall
         ;;
     3)
-        info "Keluar dari setup manager. Tidak ada perubahan yang dibuat."
+        info "Exiting setup manager. No changes were made."
         exit 0
         ;;
     *)
-        error "Pilihan tidak valid. Silakan jalankan kembali script."
+        error "Invalid choice. Please run the script again."
         ;;
 esac
