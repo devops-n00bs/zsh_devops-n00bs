@@ -9,7 +9,7 @@
 set -euo pipefail
 
 # Version
-VERSION="v1.2.0"
+VERSION="v1.3.0"
 
 # Colors for output
 RED='\033[0;31m'
@@ -1449,12 +1449,12 @@ VIM_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.vimrc" true)
 TMUX_USER_STATUS=$(get_status_label "${HOME}/.tmux.conf" false)
 TMUX_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.tmux.conf" true)
 
-echo -e "${CYAN}  ____                 ___               _  _         ${NC}"
-echo -e "${CYAN} |  _ \  _____   __   / _ \ _ __  ___   | || |__  ___ ${NC}"
-echo -e "${CYAN} | | | |/ _ \ \ / /  | | | | '_ \/ _ \  | || '_ \/ __|${NC}"
-echo -e "${CYAN} | |_| |  __/\ V /   | |_| | |_) \__ \  | || |_) \__ \\ ${NC}"
-echo -e "${CYAN} |____/ \___| \_/     \___/| .__/|___/  |_||_.__/|___/${NC}"
-echo -e "${CYAN}                           |_|                        ${NC}"
+echo -e "${CYAN}  ____                 ___               _  _         "
+echo -e " |  _ \  _____   __   / _ \ _ __  ___   | || |__  ___ "
+echo -e " | | | |/ _ \ \ / /  | | | | '_ \/ _ \  | || '_ \/ __|"
+echo -e " | |_| |  __/\ V /   | |_| | |_) \__ \  | || |_) \__ \\"
+echo -e " |____/ \___| \_/     \___/| .__/|___/  |_||_.__/|___/"
+echo -e "                           |_|                        ${NC}"
 echo -e "${PURPLE}               DEVOPS-N00BS TERMINAL SUITE (${VERSION})${NC}"
 echo -e "${BLUE}               Created by: @devops-n00bs | Repo: zsh_devops-n00bs${NC}"
 echo -e "${BLUE}================================================================================${NC}"
