@@ -368,7 +368,13 @@ do_uninstall() {
         success "Menghapus folder ~/.zsh"
     fi
 
-    # 4. Automatically try to revert default shell to bash
+    # 4. Clean up cache (zcompdump and starship cache)
+    info "Membersihkan cache terminal..."
+    rm -f "${HOME}/.zcompdump"*
+    rm -rf "${HOME}/.cache/starship"
+    success "Cache zcompdump dan cache Starship telah dibersihkan."
+
+    # 5. Automatically try to revert default shell to bash
     CURRENT_SHELL=$(basename "$SHELL")
     if [[ "$OSTYPE" == "darwin"* ]]; then
         info "Di macOS, shell default standar adalah zsh. Tidak perlu diubah ke bash."
@@ -389,8 +395,9 @@ do_uninstall() {
         fi
     fi
 
-    echo -e "\n${GREEN}Pembersihan selesai! Semua file kustom telah dihapus bersih seperti semula.${NC}"
+    echo -e "\n${GREEN}Pembersihan selesai! Semua file kustom & cache telah dihapus bersih seperti semula.${NC}"
     echo -e "${YELLOW}Silakan restart terminal atau buka sesi terminal baru untuk melihat efeknya.${NC}\n"
+    exit 0
 }
 
 # Interactive Menu Loop
