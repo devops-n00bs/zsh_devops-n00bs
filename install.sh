@@ -28,11 +28,51 @@ success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
 
 # 1. Detect environment & dependencies
 info "Memeriksa dependensi..."
+MISSING_DEPS=()
 for cmd in git curl zsh; do
     if ! command -v "$cmd" &> /dev/null; then
-        error "Perintah '$cmd' tidak ditemukan. Harap instal '$cmd' terlebih dahulu."
+        MISSING_DEPS+=("$cmd")
     fi
 done
+
+if [ ${#MISSING_DEPS[@]} -ne 0 ]; then
+    warn "Dependensi berikut belum terinstal: ${MISSING_DEPS[*]}"
+    info "Mencoba menginstal dependensi secara otomatis..."
+    
+    # Tentukan apakah perlu sudo
+    SUDO=""
+    if [ "$(id -u)" -ne 0 ]; then
+        SUDO="sudo"
+    fi
+    
+    # Deteksi Sistem Operasi / Package Manager
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        if ! command -v brew &> /dev/null; then
+            error "Homebrew tidak ditemukan. Harap instal Homebrew terlebih dahulu atau pasang dependensi secara manual."
+        fi
+        info "Menginstal via Homebrew..."
+        brew install "${MISSING_DEPS[@]}"
+    elif [ -f /etc/debian_version ]; then
+        info "Menginstal via apt-get..."
+        $SUDO apt-get update
+        $SUDO apt-get install -y "${MISSING_DEPS[@]}"
+    elif [ -f /etc/redhat-release ] || [ -f /etc/system-release ]; then
+        info "Menginstal via dnf/yum..."
+        if command -v dnf &> /dev/null; then
+            $SUDO dnf install -y "${MISSING_DEPS[@]}"
+        else
+            $SUDO yum install -y "${MISSING_DEPS[@]}"
+        fi
+    elif [ -f /etc/arch-release ]; then
+        info "Menginstal via pacman..."
+        $SUDO pacman -Syu --noconfirm "${MISSING_DEPS[@]}"
+    else
+        error "Sistem operasi tidak didukung untuk instalasi otomatis. Harap pasang secara manual: ${MISSING_DEPS[*]}"
+    fi
+    success "Dependensi berhasil diinstal."
+else
+    info "Semua dependensi dasar terpenuhi."
+fi
 
 # Detect if script is run locally or downloaded directly
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" &>/dev/null && pwd)"
