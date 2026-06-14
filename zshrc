@@ -89,7 +89,9 @@ alias grep="grep --color=auto"
 alias reload="exec zsh"
 
 # Smart Auto-Aliases (Check for modern CLI replacements)
-if command -v bat &> /dev/null; then
+if command -v batcat &> /dev/null; then
+    alias cat="batcat --style=plain"
+elif command -v bat &> /dev/null; then
     alias cat="bat --style=plain"
 fi
 

@@ -9,7 +9,7 @@
 set -euo pipefail
 
 # Version
-VERSION="v1.0.9"
+VERSION="v1.1.0"
 
 # Colors for output
 RED='\033[0;31m'
@@ -83,6 +83,47 @@ do_install() {
         success "Dependensi berhasil diinstal."
     else
         info "Semua dependensi dasar terpenuhi."
+    fi
+
+    # Try to install optional modern CLI tools (bat and eza/exa) on best-effort basis
+    info "Memeriksa alat pendukung opsional (bat & eza)..."
+    OPTIONAL_DEPS=()
+    if ! command -v bat &> /dev/null && ! command -v batcat &> /dev/null; then
+        OPTIONAL_DEPS+=("bat")
+    fi
+    if ! command -v eza &> /dev/null && ! command -v exa &> /dev/null; then
+        OPTIONAL_DEPS+=("eza")
+    fi
+
+    if [ ${#OPTIONAL_DEPS[@]} -ne 0 ]; then
+        info "Mencoba menginstal alat opsional secara otomatis: ${OPTIONAL_DEPS[*]}"
+        SUDO=""
+        if [ "$(id -u)" -ne 0 ]; then
+            SUDO="sudo"
+        fi
+        
+        # Nonaktifkan exit-on-error sementara agar kegagalan alat opsional tidak membatalkan seluruh proses
+        set +e
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            if command -v brew &> /dev/null; then
+                brew install "${OPTIONAL_DEPS[@]}"
+            fi
+        elif [ -f /etc/debian_version ]; then
+            $SUDO apt-get install -y "${OPTIONAL_DEPS[@]}"
+            # Jika eza tidak ada (Ubuntu lama), coba install exa sebagai fallback
+            if ! command -v eza &> /dev/null && ! command -v exa &> /dev/null; then
+                $SUDO apt-get install -y exa
+            fi
+        elif [ -f /etc/redhat-release ] || [ -f /etc/system-release ]; then
+            if command -v dnf &> /dev/null; then
+                $SUDO dnf install -y "${OPTIONAL_DEPS[@]}"
+            else
+                $SUDO yum install -y "${OPTIONAL_DEPS[@]}"
+            fi
+        elif [ -f /etc/arch-release ]; then
+            $SUDO pacman -S --noconfirm "${OPTIONAL_DEPS[@]}"
+        fi
+        set -e
     fi
 
     # 2. Install Starship Prompt
@@ -237,7 +278,9 @@ alias grep="grep --color=auto"
 alias reload="exec zsh"
 
 # Smart Auto-Aliases (Check for modern CLI replacements)
-if command -v bat &> /dev/null; then
+if command -v batcat &> /dev/null; then
+    alias cat="batcat --style=plain"
+elif command -v bat &> /dev/null; then
     alias cat="bat --style=plain"
 fi
 
