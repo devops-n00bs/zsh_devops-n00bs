@@ -455,65 +455,39 @@ do_install_vim() {
     echo ""
     info "=== STARTING VIM/NEOVIM INSTALLATION ==="
 
-    # 1. Detect and install Vim & Neovim if missing
-    # Install Vim
-    if ! command -v vim &> /dev/null; then
-        info "Vim is not installed. Installing Vim..."
-        SUDO=""
-        if [ "$(id -u)" -ne 0 ]; then
-            SUDO="sudo"
-        fi
-        
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            if ! command -v brew &> /dev/null; then
-                error "Homebrew not found. Please install Homebrew or install Vim manually."
-            fi
-            brew install vim
-        elif [ -f /etc/debian_version ]; then
-            $SUDO apt-get update
-            $SUDO apt-get install -y vim
-        elif [ -f /etc/redhat-release ] || [ -f /etc/system-release ]; then
-            if command -v dnf &> /dev/null; then
-                $SUDO dnf install -y vim
-            else
-                $SUDO yum install -y vim
-            fi
-        elif [ -f /etc/arch-release ]; then
-            $SUDO pacman -Syu --noconfirm vim
-        else
-            warn "Could not install Vim automatically. Please install it manually."
-        fi
-    else
-        info "Vim is already installed."
+    # 1. Detect and install Vim, Neovim & Clipboard utilities
+    SUDO=""
+    if [ "$(id -u)" -ne 0 ]; then
+        SUDO="sudo"
     fi
 
-    # Install Neovim
-    if ! command -v nvim &> /dev/null; then
-        info "Neovim (nvim) is not installed. Attempting to install Neovim..."
-        SUDO=""
-        if [ "$(id -u)" -ne 0 ]; then
-            SUDO="sudo"
+    info "Installing Vim, Neovim, and Clipboard dependencies..."
+    set +e
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        if command -v brew &> /dev/null; then
+            info "Installing via Homebrew..."
+            brew install vim neovim
+        else
+            warn "Homebrew not found. Please install dependencies (vim, neovim) manually."
         fi
-        
-        set +e
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            if command -v brew &> /dev/null; then
-                brew install neovim
-            fi
-        elif [ -f /etc/debian_version ]; then
-            $SUDO apt-get update
-            $SUDO apt-get install -y neovim
-        elif [ -f /etc/redhat-release ] || [ -f /etc/system-release ]; then
-            if command -v dnf &> /dev/null; then
-                $SUDO dnf install -y neovim
-            else
-                $SUDO yum install -y neovim
-            fi
-        elif [ -f /etc/arch-release ]; then
-            $SUDO pacman -S --noconfirm neovim
+    elif [ -f /etc/debian_version ]; then
+        info "Installing packages via apt-get (vim-gtk3 for clipboard support, xclip, and neovim)..."
+        $SUDO apt-get update
+        $SUDO apt-get install -y vim-gtk3 xclip neovim
+    elif [ -f /etc/redhat-release ] || [ -f /etc/system-release ]; then
+        info "Installing packages via dnf/yum..."
+        if command -v dnf &> /dev/null; then
+            $SUDO dnf install -y vim-enhanced xclip neovim
+        else
+            $SUDO yum install -y vim-enhanced xclip neovim
         fi
-        set -e
+    elif [ -f /etc/arch-release ]; then
+        info "Installing packages via pacman..."
+        $SUDO pacman -S --noconfirm gvim xclip neovim
+    else
+        warn "Operating system not fully supported for auto-installation. Please ensure vim, neovim, and xclip are installed."
     fi
+    set -e
 
     # 2. Setup .vimrc
     if [ -f "${HOME}/.vimrc" ] && [ ! -f "${HOME}/.vimrc.bak" ]; then
