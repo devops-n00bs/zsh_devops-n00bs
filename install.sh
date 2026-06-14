@@ -1452,7 +1452,7 @@ TMUX_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.tmux.conf" true)
 echo -e "${CYAN}  ____                 ___               _  _         ${NC}"
 echo -e "${CYAN} |  _ \  _____   __   / _ \ _ __  ___   | || |__  ___ ${NC}"
 echo -e "${CYAN} | | | |/ _ \ \ / /  | | | | '_ \/ _ \  | || '_ \/ __|${NC}"
-echo -e "${CYAN} | |_| |  __/\ V /   | |_| | |_) \__ \  | || |_) \__ \\${NC}"
+echo -e "${CYAN} | |_| |  __/\ V /   | |_| | |_) \__ \  | || |_) \__ \\ ${NC}"
 echo -e "${CYAN} |____/ \___| \_/     \___/| .__/|___/  |_||_.__/|___/${NC}"
 echo -e "${CYAN}                           |_|                        ${NC}"
 echo -e "${PURPLE}               DEVOPS-N00BS TERMINAL SUITE (${VERSION})${NC}"
