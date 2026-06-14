@@ -50,7 +50,7 @@ diverged = "⇕"
 untracked = "?"
 stashed = "$"
 modified = "!"
-added = "+"
+staged = "+"
 renamed = "»"
 deleted = "✘"
 

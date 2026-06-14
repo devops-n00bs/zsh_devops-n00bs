@@ -9,7 +9,7 @@
 set -euo pipefail
 
 # Version
-VERSION="v1.0.1"
+VERSION="v1.0.2"
 
 # Colors for output
 RED='\033[0;31m'
@@ -285,7 +285,7 @@ diverged = "⇕"
 untracked = "?"
 stashed = "$"
 modified = "!"
-added = "+"
+staged = "+"
 renamed = "»"
 deleted = "✘"
 
