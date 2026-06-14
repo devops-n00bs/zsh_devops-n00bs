@@ -133,7 +133,7 @@ do_install() {
         cp "${SCRIPT_DIR}/zshrc" "${HOME}/.zshrc"
     else
         info "Mengunduh file zshrc dari GitHub..."
-        curl -fsSL "${RAW_URL}/zshrc" -o "${HOME}/.zshrc"
+        curl -fsSL "${RAW_URL}/zshrc?v=$(date +%s)" -o "${HOME}/.zshrc"
     fi
 
     # Setup starship.toml
@@ -147,7 +147,7 @@ do_install() {
         cp "${SCRIPT_DIR}/starship.toml" "${HOME}/.config/starship.toml"
     else
         info "Mengunduh file starship.toml dari GitHub..."
-        curl -fsSL "${RAW_URL}/starship.toml" -o "${HOME}/.config/starship.toml"
+        curl -fsSL "${RAW_URL}/starship.toml?v=$(date +%s)" -o "${HOME}/.config/starship.toml"
     fi
 
     success "Konfigurasi Zsh dan Starship telah diterapkan!"
