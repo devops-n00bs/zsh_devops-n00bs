@@ -133,5 +133,12 @@ Our universal Tmux setup is configured with the highly-accessible prefix **`Ctrl
 *   **Mouse Support**: Full scroll wheel support to browse terminal history, click to select panes, and drag split lines to resize windows.
 *   **Reload Config**:
     *   `Ctrl + A` then `r` : Reload configuration on-the-fly without restarting sessions
+*   **Copy Mode & Clipboard Syncing**:
+    *   **Enter Copy Mode**: Press `Ctrl + A` then `[`
+    *   **Select Text (Normal)**: Press `v` (to start visual selection) and move cursor.
+    *   **Select Area/Block (Rectangular)**: Press `Ctrl + V` (to start visual block/rectangular selection) and move cursor.
+    *   **Copy Selection**: Press `y` or `Enter` to copy to the system clipboard and exit copy mode.
+    *   **Mouse Copy**: Drag selection with mouse. When released, the text is automatically copied to your system clipboard.
+
 
 

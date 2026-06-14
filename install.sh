@@ -913,6 +913,39 @@ set -g pane-active-border-style "fg=#0087AF"
 
 # Message bar coloring
 set -g message-style "bg=#005F87,fg=#FFFFFF,bold"
+
+# ------------------------------------------------------------------------------
+# 5. Cross-Platform Clipboard Piping & Copy Mode (vi-keys)
+# ------------------------------------------------------------------------------
+# Use vi keys in copy mode
+setw -g mode-keys vi
+
+# Bind 'v' to begin selection (like in Vim)
+bind-key -T copy-mode-vi v send-keys -X begin-selection
+
+# Bind 'C-v' to toggle rectangle selection (for copying a rectangular area/block)
+bind-key -T copy-mode-vi C-v send-keys -X rectangle-toggle
+
+# WSL (Windows Subsystem for Linux)
+if-shell "uname -r | grep -q -i microsoft" {
+    bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "clip.exe"
+    bind-key -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "clip.exe"
+    bind-key -T copy-mode MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "clip.exe"
+}
+
+# macOS
+if-shell "uname | grep -q Darwin" {
+    bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "pbcopy"
+    bind-key -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "pbcopy"
+    bind-key -T copy-mode MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "pbcopy"
+}
+
+# Linux (non-WSL)
+if-shell "command -v xclip" {
+    bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "xclip -selection clipboard -in"
+    bind-key -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "xclip -selection clipboard -in"
+    bind-key -T copy-mode MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "xclip -selection clipboard -in"
+}
 EOF
     fi
     success "Tmux configuration successfully applied!"
