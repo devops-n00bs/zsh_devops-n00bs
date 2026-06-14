@@ -9,7 +9,7 @@
 set -euo pipefail
 
 # Version
-VERSION="v1.0.2"
+VERSION="v1.0.3"
 
 # Colors for output
 RED='\033[0;31m'
@@ -242,6 +242,7 @@ add_newline = true
 
 # Use custom format
 format = """
+$os\
 $directory\
 $git_branch\
 $git_status\
@@ -255,6 +256,18 @@ $character"""
 symbol = " "
 disabled = false
 
+# OS Module
+[os]
+disabled = false
+style = "bold white"
+
+[os.symbols]
+Windows = "󰖳 "
+Ubuntu = "󰕈 "
+Debian = "󰣚 "
+Macos = "󰀵 "
+Linux = "󰌽 "
+
 # Character (Prompt Symbol)
 [character]
 success_symbol = "[❯](bold green)"
@@ -265,9 +278,10 @@ vicmd_symbol = "[❮](bold yellow)"
 [directory]
 style = "bold cyan"
 read_only = " 󰌾"
-truncation_length = 3
-truncate_to_repo = true
+truncation_length = 5
+truncate_to_repo = false
 truncation_symbol = "../"
+format = "in [$path]($style)[$read_only]($read_only_style) "
 
 # Git Configuration
 [git_branch]
