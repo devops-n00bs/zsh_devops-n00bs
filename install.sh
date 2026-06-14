@@ -455,7 +455,8 @@ do_install_vim() {
     echo ""
     info "=== STARTING VIM/NEOVIM INSTALLATION ==="
 
-    # 1. Detect and install Vim if missing
+    # 1. Detect and install Vim & Neovim if missing
+    # Install Vim
     if ! command -v vim &> /dev/null; then
         info "Vim is not installed. Installing Vim..."
         SUDO=""
@@ -484,6 +485,34 @@ do_install_vim() {
         fi
     else
         info "Vim is already installed."
+    fi
+
+    # Install Neovim
+    if ! command -v nvim &> /dev/null; then
+        info "Neovim (nvim) is not installed. Attempting to install Neovim..."
+        SUDO=""
+        if [ "$(id -u)" -ne 0 ]; then
+            SUDO="sudo"
+        fi
+        
+        set +e
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            if command -v brew &> /dev/null; then
+                brew install neovim
+            fi
+        elif [ -f /etc/debian_version ]; then
+            $SUDO apt-get update
+            $SUDO apt-get install -y neovim
+        elif [ -f /etc/redhat-release ] || [ -f /etc/system-release ]; then
+            if command -v dnf &> /dev/null; then
+                $SUDO dnf install -y neovim
+            else
+                $SUDO yum install -y neovim
+            fi
+        elif [ -f /etc/arch-release ]; then
+            $SUDO pacman -S --noconfirm neovim
+        fi
+        set -e
     fi
 
     # 2. Setup .vimrc
