@@ -167,54 +167,56 @@ do_install() {
 # Function: Uninstall / Restore Configuration
 do_uninstall() {
     echo ""
-    info "=== MEMULAI REMOVAL / RESTORE ==="
+    info "=== MEMULAI PEMBERSIHAN TOTAL (UNINSTALL) ==="
     
-    # 1. Restore .zshrc
-    info "Mengembalikan konfigurasi .zshrc..."
-    if [ -f "${HOME}/.zshrc.bak" ]; then
-        mv "${HOME}/.zshrc.bak" "${HOME}/.zshrc"
-        success "Mengembalikan file ~/.zshrc dari cadangan ~/.zshrc.bak"
-    else
-        if [ -f "${HOME}/.zshrc" ]; then
-            rm "${HOME}/.zshrc"
-            success "Menghapus ~/.zshrc karena tidak ada cadangan (.zshrc.bak) sebelumnya."
-        else
-            info "~/.zshrc sudah bersih."
+    # 1. Remove Zsh configuration and backups
+    info "Menghapus file konfigurasi Zsh..."
+    for file in "${HOME}/.zshrc" "${HOME}/.zshrc.bak"; do
+        if [ -f "$file" ]; then
+            rm -f "$file"
+            success "Menghapus $file"
         fi
-    fi
+    done
 
-    # 2. Restore starship.toml
-    info "Mengembalikan konfigurasi Starship..."
-    if [ -f "${HOME}/.config/starship.toml.bak" ]; then
-        mv "${HOME}/.config/starship.toml.bak" "${HOME}/.config/starship.toml"
-        success "Mengembalikan file ~/.config/starship.toml dari cadangan ~/.config/starship.toml.bak"
-    else
-        if [ -f "${HOME}/.config/starship.toml" ]; then
-            rm "${HOME}/.config/starship.toml"
-            success "Menghapus ~/.config/starship.toml."
+    # 2. Remove Starship configuration and backups
+    info "Menghapus konfigurasi Starship..."
+    for file in "${HOME}/.config/starship.toml" "${HOME}/.config/starship.toml.bak"; do
+        if [ -f "$file" ]; then
+            rm -f "$file"
+            success "Menghapus $file"
         fi
+    done
+
+    # 3. Clean up plugins and entire .zsh directory
+    info "Membersihkan seluruh folder plugin dan folder ~/.zsh..."
+    if [ -d "${HOME}/.zsh" ]; then
+        rm -rf "${HOME}/.zsh"
+        success "Menghapus folder ~/.zsh"
     fi
 
-    # 3. Clean up plugins
-    info "Membersihkan plugin..."
-    if [ -d "${HOME}/.zsh/plugins" ]; then
-        rm -rf "${HOME}/.zsh/plugins"
-        success "Menghapus folder plugin ~/.zsh/plugins"
-    fi
-
-    # 4. Suggest shell change back to bash
+    # 4. Automatically try to revert default shell to bash
     CURRENT_SHELL=$(basename "$SHELL")
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        info "Di macOS, shell default adalah zsh."
+        info "Di macOS, shell default standar adalah zsh. Tidak perlu diubah ke bash."
     else
-        if [ "$CURRENT_SHELL" = "zsh" ] && command -v bash &> /dev/null; then
-            warn "Shell aktif saat ini adalah Zsh."
-            echo -e "${YELLOW}Untuk kembali menggunakan bash sebagai shell default, jalankan:${NC}"
-            echo -e "  chsh -s \$(which bash)"
+        if command -v bash &> /dev/null; then
+            info "Mengubah default shell kembali ke bash..."
+            BASH_PATH=$(which bash)
+            if [ "$CURRENT_SHELL" = "zsh" ]; then
+                # Ganti shell secara interaktif (bisa meminta password user)
+                if chsh -s "$BASH_PATH" < /dev/tty; then
+                    success "Default shell berhasil dikembalikan ke bash ($BASH_PATH)."
+                else
+                    warn "Gagal mengubah shell secara otomatis. Silakan jalankan manual: chsh -s $BASH_PATH"
+                fi
+            else
+                info "Shell default saat ini bukan zsh ($CURRENT_SHELL), tidak perlu mengubah shell."
+            fi
         fi
     fi
 
-    echo -e "\n${GREEN}Pembersihan/Pengembalian selesai! Silakan buka kembali terminal Anda atau reload shell.${NC}\n"
+    echo -e "\n${GREEN}Pembersihan selesai! Semua file kustom telah dihapus bersih seperti semula.${NC}"
+    echo -e "${YELLOW}Silakan restart terminal atau buka sesi terminal baru untuk melihat efeknya.${NC}\n"
 }
 
 # Interactive Menu Loop
