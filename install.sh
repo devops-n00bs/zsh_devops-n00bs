@@ -9,7 +9,7 @@
 set -euo pipefail
 
 # Version
-VERSION="v1.0.3"
+VERSION="v1.0.4"
 
 # Colors for output
 RED='\033[0;31m'
@@ -135,6 +135,12 @@ do_install() {
 # ZSH CONFIGURATION (Custom, Fast, and Clean)
 # Compatible with macOS, Linux, and Windows WSL
 # ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 0. Locale settings (Ensures UTF-8 characters render correctly)
+# ------------------------------------------------------------------------------
+export LANG="en_US.UTF-8"
+export LC_ALL="en_US.UTF-8"
 
 # ------------------------------------------------------------------------------
 # 1. History Configuration
