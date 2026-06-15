@@ -33,7 +33,7 @@ if [ "$IS_LOCAL" = false ]; then
     fi
     
     # Delegate execution to the extracted installer
-    "$TEMP_DIR/install.sh" "$@"
+    bash "$TEMP_DIR/install.sh" "$@"
     exit 0
 fi
 
@@ -115,27 +115,27 @@ while true; do
 
     case "$CHOICE" in
         1)
-            "${SCRIPT_DIR}/scripts/install_zsh.sh"
+            bash "${SCRIPT_DIR}/scripts/install_zsh.sh"
             ;;
         2)
-            "${SCRIPT_DIR}/scripts/install_vim.sh"
+            bash "${SCRIPT_DIR}/scripts/install_vim.sh"
             ;;
         3)
-            "${SCRIPT_DIR}/scripts/install_tmux.sh"
+            bash "${SCRIPT_DIR}/scripts/install_tmux.sh"
             ;;
         4)
-            "${SCRIPT_DIR}/scripts/install_fzf.sh"
+            bash "${SCRIPT_DIR}/scripts/install_fzf.sh"
             ;;
         5)
             info "=== STARTING FULL INSTALLATION (ALL MODULES) ==="
-            "${SCRIPT_DIR}/scripts/install_zsh.sh"
-            "${SCRIPT_DIR}/scripts/install_vim.sh"
-            "${SCRIPT_DIR}/scripts/install_tmux.sh"
-            "${SCRIPT_DIR}/scripts/install_fzf.sh"
+            bash "${SCRIPT_DIR}/scripts/install_zsh.sh"
+            bash "${SCRIPT_DIR}/scripts/install_vim.sh"
+            bash "${SCRIPT_DIR}/scripts/install_tmux.sh"
+            bash "${SCRIPT_DIR}/scripts/install_fzf.sh"
             success "All modules successfully installed!"
             ;;
         6)
-            "${SCRIPT_DIR}/scripts/uninstall.sh"
+            bash "${SCRIPT_DIR}/scripts/uninstall.sh"
             ;;
         7)
             info "Exiting setup manager. Goodbye!"

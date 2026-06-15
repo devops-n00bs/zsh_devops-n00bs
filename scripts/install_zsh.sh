@@ -214,7 +214,7 @@ else
     read -r -p "Do you want to install and configure FZF (Fuzzy Finder) for interactive history & file search? (y/N): " FZF_CHOICE < /dev/tty
     if [[ "$FZF_CHOICE" =~ ^[Yy]$ ]]; then
         # Execute FZF installation script
-        "${SCRIPT_DIR}/install_fzf.sh"
+        bash "${SCRIPT_DIR}/install_fzf.sh"
     fi
 fi
 
