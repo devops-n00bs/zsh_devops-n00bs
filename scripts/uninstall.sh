@@ -52,7 +52,7 @@ if [ "$(id -u)" -eq 0 ]; then
 
     echo -e "  ${CYAN}[4] FZF (Fuzzy Finder):${NC}"
     echo -ne "      - Status        : "
-    if command -v fzf &> /dev/null || [[ -f "${HOME}/.local/bin/fzf" ]]; then
+    if [ -f "${ROOT_HOME}/.local/bin/fzf" ] || [ -f "${ROOT_HOME}/.fzf/bin/fzf" ] || command -v fzf &> /dev/null; then
         echo -e "${GREEN}[INSTALLED]${NC}"
     else
         echo -e "${NC}[NOT INSTALLED]${NC}"
@@ -82,7 +82,13 @@ else
 
     echo -e "  ${CYAN}[4] FZF (Fuzzy Finder):${NC}"
     echo -ne "      - User ($(whoami)) : "
-    if command -v fzf &> /dev/null || [[ -f "${HOME}/.local/bin/fzf" ]]; then
+    if [ -f "${HOME}/.local/bin/fzf" ] || [ -f "${HOME}/.fzf/bin/fzf" ] || command -v fzf &> /dev/null; then
+        echo -e "${GREEN}[INSTALLED]${NC}"
+    else
+        echo -e "${NC}[NOT INSTALLED]${NC}"
+    fi
+    echo -ne "      - Root          : "
+    if sudo [ -f "${ROOT_HOME}/.local/bin/fzf" ] 2>/dev/null || sudo [ -f "${ROOT_HOME}/.fzf/bin/fzf" ] 2>/dev/null || sudo sh -c 'command -v fzf' >/dev/null 2>&1; then
         echo -e "${GREEN}[INSTALLED]${NC}"
     else
         echo -e "${NC}[NOT INSTALLED]${NC}"

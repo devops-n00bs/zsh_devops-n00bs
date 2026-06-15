@@ -62,6 +62,12 @@ while true; do
         ZSH_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.zshrc" true)
         VIM_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.vimrc" true)
         TMUX_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.tmux.conf" true)
+        
+        if [ -f "${ROOT_HOME}/.local/bin/fzf" ] || [ -f "${ROOT_HOME}/.fzf/bin/fzf" ] || command -v fzf >/dev/null 2>&1; then
+            FZF_ROOT_STATUS="${GREEN}[INSTALLED]${NC}"
+        else
+            FZF_ROOT_STATUS="${RED}[NOT INSTALLED]${NC}"
+        fi
     else
         ZSH_USER_STATUS=$(get_status_label "${HOME}/.zshrc" false)
         ZSH_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.zshrc" true)
@@ -71,12 +77,18 @@ while true; do
 
         TMUX_USER_STATUS=$(get_status_label "${HOME}/.tmux.conf" false)
         TMUX_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.tmux.conf" true)
-    fi
 
-    if [ -f "${HOME}/.local/bin/fzf" ] || command -v fzf >/dev/null 2>&1; then
-        FZF_STATUS="${GREEN}[INSTALLED]${NC}"
-    else
-        FZF_STATUS="${RED}[NOT INSTALLED]${NC}"
+        if [ -f "${HOME}/.local/bin/fzf" ] || [ -f "${HOME}/.fzf/bin/fzf" ] || command -v fzf >/dev/null 2>&1; then
+            FZF_USER_STATUS="${GREEN}[INSTALLED]${NC}"
+        else
+            FZF_USER_STATUS="${RED}[NOT INSTALLED]${NC}"
+        fi
+
+        if sudo [ -f "${ROOT_HOME}/.local/bin/fzf" ] 2>/dev/null || sudo [ -f "${ROOT_HOME}/.fzf/bin/fzf" ] 2>/dev/null || sudo sh -c 'command -v fzf' >/dev/null 2>&1; then
+            FZF_ROOT_STATUS="${GREEN}[INSTALLED]${NC}"
+        else
+            FZF_ROOT_STATUS="${RED}[NOT INSTALLED]${NC}"
+        fi
     fi
 
     # Print Title ASCII Art
@@ -100,12 +112,12 @@ while true; do
         echo -e "   [1] Zsh Shell & Starship Prompt  : ${ZSH_ROOT_STATUS}"
         echo -e "   [2] Vim & Neovim Configurations  : ${VIM_ROOT_STATUS}"
         echo -e "   [3] Tmux Premium Layout          : ${TMUX_ROOT_STATUS}"
-        echo -e "   [4] FZF (Fuzzy Finder) Module    : ${FZF_STATUS}"
+        echo -e "   [4] FZF (Fuzzy Finder) Module    : ${FZF_ROOT_STATUS}"
     else
         echo -e "   [1] Zsh Shell & Starship Prompt  : User: ${ZSH_USER_STATUS} / Root: ${ZSH_ROOT_STATUS}"
         echo -e "   [2] Vim & Neovim Configurations  : User: ${VIM_USER_STATUS} / Root: ${VIM_ROOT_STATUS}"
         echo -e "   [3] Tmux Premium Layout          : User: ${TMUX_USER_STATUS} / Root: ${TMUX_ROOT_STATUS}"
-        echo -e "   [4] FZF (Fuzzy Finder) Module    : User: ${FZF_STATUS}"
+        echo -e "   [4] FZF (Fuzzy Finder) Module    : User: ${FZF_USER_STATUS} / Root: ${FZF_ROOT_STATUS}"
     fi
     echo -e "${BLUE}================================================================================${NC}"
     echo -e "${YELLOW} ABOUT THIS SUITE:${NC}"
