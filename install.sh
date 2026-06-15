@@ -165,7 +165,7 @@ while true; do
             ;;
         5)
             info "=== STARTING FULL INSTALLATION (ALL MODULES) ==="
-            local err=0
+            err=0
             bash "${SCRIPT_DIR}/scripts/install_zsh.sh" || err=1
             bash "${SCRIPT_DIR}/scripts/install_vim.sh" || err=1
             bash "${SCRIPT_DIR}/scripts/install_tmux.sh" || err=1

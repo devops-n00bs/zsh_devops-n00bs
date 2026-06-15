@@ -285,10 +285,9 @@ case "$UNINSTALL_CHOICE" in
 
         # Starship binary removal
         if command -v starship &> /dev/null; then
-            local STARSHIP_PATH
             STARSHIP_PATH=$(which starship)
             info "Removing Starship binary at $STARSHIP_PATH..."
-            local SUDO=""
+            SUDO=""
             if [ "$(id -u)" -ne 0 ]; then SUDO="sudo"; fi
             $SUDO rm -f "$STARSHIP_PATH"
             success "Removed Starship binary."
@@ -298,7 +297,7 @@ case "$UNINSTALL_CHOICE" in
 
         # Revert default shell to bash for user
         if [[ "$OSTYPE" != "darwin"* ]]; then
-            local check_shell="unknown"
+            check_shell="unknown"
             if [ -n "${SHELL:-}" ]; then
                 check_shell=$(basename "$SHELL")
             fi
@@ -311,7 +310,7 @@ case "$UNINSTALL_CHOICE" in
         # Root Zsh cleanup if detected (only if not already running as root)
         if [ "$(id -u)" -ne 0 ] && (sudo [ -f "${ROOT_HOME}/.zshrc" ] || sudo [ -f "${ROOT_HOME}/.zshrc.bak" ] 2>/dev/null); then
             echo ""
-            local RM_ROOT_ZSH
+            RM_ROOT_ZSH=""
             read -r -p "Do you also want to remove Zsh configurations for 'root' user? (y/N): " RM_ROOT_ZSH < /dev/tty
             if [[ "$RM_ROOT_ZSH" =~ ^[Yy]$ ]]; then
                 if [ "$RESET_METHOD" -eq 1 ]; then
@@ -348,7 +347,7 @@ case "$UNINSTALL_CHOICE" in
         # Root Vim cleanup if detected (only if not already running as root)
         if [ "$(id -u)" -ne 0 ] && (sudo [ -f "${ROOT_HOME}/.vimrc" ] || sudo [ -f "${ROOT_HOME}/.vimrc.bak" ] 2>/dev/null); then
             echo ""
-            local RM_ROOT_VIM
+            RM_ROOT_VIM=""
             read -r -p "Do you also want to remove Vim configurations for 'root' user? (y/N): " RM_ROOT_VIM < /dev/tty
             if [[ "$RM_ROOT_VIM" =~ ^[Yy]$ ]]; then
                 if [ "$RESET_METHOD" -eq 1 ]; then
@@ -378,7 +377,7 @@ case "$UNINSTALL_CHOICE" in
         # Root Tmux cleanup if detected (only if not already running as root)
         if [ "$(id -u)" -ne 0 ] && (sudo [ -f "${ROOT_HOME}/.tmux.conf" ] || sudo [ -f "${ROOT_HOME}/.tmux.conf.bak" ] 2>/dev/null); then
             echo ""
-            local RM_ROOT_TMUX
+            RM_ROOT_TMUX=""
             read -r -p "Do you also want to remove Tmux configurations for 'root' user? (y/N): " RM_ROOT_TMUX < /dev/tty
             if [[ "$RM_ROOT_TMUX" =~ ^[Yy]$ ]]; then
                 if [ "$RESET_METHOD" -eq 1 ]; then
@@ -426,9 +425,8 @@ case "$UNINSTALL_CHOICE" in
         rm -rf "${HOME}/.cache/starship"
 
         if command -v starship &> /dev/null; then
-            local STARSHIP_PATH
             STARSHIP_PATH=$(which starship)
-            local SUDO=""
+            SUDO=""
             if [ "$(id -u)" -ne 0 ]; then SUDO="sudo"; fi
             $SUDO rm -f "$STARSHIP_PATH"
         fi
@@ -438,7 +436,7 @@ case "$UNINSTALL_CHOICE" in
         clean_bashrc false
 
         if [[ "$OSTYPE" != "darwin"* ]]; then
-            local check_shell="unknown"
+            check_shell="unknown"
             if [ -n "${SHELL:-}" ]; then
                 check_shell=$(basename "$SHELL")
             fi
@@ -448,7 +446,7 @@ case "$UNINSTALL_CHOICE" in
         fi
 
         # Root check & cleanups (only if not already running as root)
-        local HAS_ROOT_CONFIG=false
+        HAS_ROOT_CONFIG=false
         if [ "$(id -u)" -ne 0 ]; then
             if sudo [ -f "${ROOT_HOME}/.zshrc" ] || sudo [ -f "${ROOT_HOME}/.zshrc.bak" ] || \
                sudo [ -f "${ROOT_HOME}/.vimrc" ] || sudo [ -f "${ROOT_HOME}/.vimrc.bak" ] || \
@@ -459,7 +457,7 @@ case "$UNINSTALL_CHOICE" in
 
         if [ "$HAS_ROOT_CONFIG" = true ]; then
             echo ""
-            local RM_ROOT_ALL
+            RM_ROOT_ALL=""
             read -r -p "Do you also want to remove ALL configurations for 'root' user? (y/N): " RM_ROOT_ALL < /dev/tty
             if [[ "$RM_ROOT_ALL" =~ ^[Yy]$ ]]; then
                 if [ "$RESET_METHOD" -eq 1 ]; then
