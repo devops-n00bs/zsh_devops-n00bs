@@ -1,0 +1,10 @@
+# Enforce LF (Unix) line endings for all configuration files and shell scripts
+# This prevents carriage return (\r) parsing errors in Zsh, Vim, and Tmux
+* text=auto eol=lf
+
+zshrc text eol=lf
+vimrc text eol=lf
+tmux.conf text eol=lf
+starship.toml text eol=lf
+install.sh text eol=lf
+scripts/*.sh text eol=lf

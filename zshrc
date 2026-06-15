@@ -84,7 +84,7 @@ fi
 # ------------------------------------------------------------------------------
 # 5. Prompt Initialization (Starship)
 # ------------------------------------------------------------------------------
-if command -v starship &> /dev/null; then
+if command -v starship >/dev/null 2>&1; then
     eval "$(starship init zsh)"
 else
     # Fallback prompt if Starship is not installed yet
@@ -102,18 +102,18 @@ alias ...="cd ../.."
 alias ....="cd ../../.."
 
 # Smart Auto-Aliases (Check for modern CLI replacements)
-if command -v batcat &> /dev/null; then
+if command -v batcat >/dev/null 2>&1; then
     alias cat="batcat --style=plain"
-elif command -v bat &> /dev/null; then
+elif command -v bat >/dev/null 2>&1; then
     alias cat="bat --style=plain"
 fi
 
-if command -v eza &> /dev/null; then
+if command -v eza >/dev/null 2>&1; then
     alias ls="eza --git"
     alias ll="eza -lah --git"
     alias la="eza -a --git"
     alias l="eza -lh --git"
-elif command -v exa &> /dev/null; then
+elif command -v exa >/dev/null 2>&1; then
     alias ls="exa --git"
     alias ll="exa -lah --git"
     alias la="exa -a --git"
@@ -128,14 +128,16 @@ fi
 # ------------------------------------------------------------------------------
 # 7. FZF (Fuzzy Finder) Integration
 # ------------------------------------------------------------------------------
-if command -v fzf &> /dev/null || [[ -f "${HOME}/.local/bin/fzf" ]]; then
+if command -v fzf >/dev/null 2>&1 || [[ -f "${HOME}/.local/bin/fzf" ]]; then
     # Ensure ~/.local/bin is in PATH if fzf was installed there
     if [[ -d "${HOME}/.local/bin" ]] && [[ ":$PATH:" != *":${HOME}/.local/bin:"* ]]; then
         export PATH="${HOME}/.local/bin:$PATH"
     fi
 
     # Initialize fzf integration if supported by the installed version (0.48.0+)
-    eval "$(fzf --zsh)" 2>/dev/null || {
+    if fzf --zsh >/dev/null 2>&1; then
+        eval "$(fzf --zsh)"
+    else
         # Fallback for older fzf versions
         # Locate and source fzf completion & key-bindings files dynamically
         local fzf_paths=(
@@ -155,5 +157,5 @@ if command -v fzf &> /dev/null || [[ -f "${HOME}/.local/bin/fzf" ]]; then
                 source "$fzf_file"
             fi
         done
-    }
+    fi
 fi
