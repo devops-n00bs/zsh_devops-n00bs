@@ -45,7 +45,7 @@ fi
 source "${SCRIPT_DIR}/scripts/utils.sh"
 
 # Constants
-VERSION="v1.4.8"
+VERSION="v1.4.9"
 
 # Main Menu Loop
 while true; do
@@ -56,6 +56,7 @@ while true; do
     CURRENT_SHELL="${SHELL:-unknown}"
     ACTIVE_USER=$(whoami)
     CPU_ARCH=$(uname -m 2>/dev/null || echo "unknown")
+    USER_ENV=$(detect_user_env)
 
     # Retrieve Module Status Labels
     if [ "$(id -u)" -eq 0 ]; then
@@ -104,15 +105,19 @@ while true; do
     echo -e "${YELLOW} SYSTEM DIAGNOSTICS:${NC}"
     echo -e "   * Operating System : ${GREEN}${OS_NAME}${NC}"
     echo -e "   * CPU Architecture : ${CYAN}${CPU_ARCH}${NC}"
-    echo -e "   * Active User      : ${GREEN}${ACTIVE_USER}${NC} (Sudo: ${SUDO_STATUS})"
+    if [ "$(id -u)" -eq 0 ]; then
+        echo -e "   * Active User      : ${GREEN}${ACTIVE_USER}${NC} (${USER_ENV})"
+    else
+        echo -e "   * Active User      : ${GREEN}${ACTIVE_USER}${NC} (Sudo: ${SUDO_STATUS})"
+    fi
     echo -e "   * Current Shell    : ${YELLOW}${CURRENT_SHELL}${NC}"
     echo -e "${BLUE}================================================================================${NC}"
     echo -e "${YELLOW} MODULE STATUS:${NC}"
     if [ "$(id -u)" -eq 0 ]; then
-        echo -e "   [1] Zsh Shell & Starship Prompt  : ${ZSH_ROOT_STATUS}"
-        echo -e "   [2] Vim & Neovim Configurations  : ${VIM_ROOT_STATUS}"
-        echo -e "   [3] Tmux Premium Layout          : ${TMUX_ROOT_STATUS}"
-        echo -e "   [4] FZF (Fuzzy Finder) Module    : ${FZF_ROOT_STATUS}"
+        echo -e "   [1] Zsh Shell & Starship Prompt  : Root: ${ZSH_ROOT_STATUS}"
+        echo -e "   [2] Vim & Neovim Configurations  : Root: ${VIM_ROOT_STATUS}"
+        echo -e "   [3] Tmux Premium Layout          : Root: ${TMUX_ROOT_STATUS}"
+        echo -e "   [4] FZF (Fuzzy Finder) Module    : Root: ${FZF_ROOT_STATUS}"
     else
         echo -e "   [1] Zsh Shell & Starship Prompt  : User: ${ZSH_USER_STATUS} / Root: ${ZSH_ROOT_STATUS}"
         echo -e "   [2] Vim & Neovim Configurations  : User: ${VIM_USER_STATUS} / Root: ${VIM_ROOT_STATUS}"

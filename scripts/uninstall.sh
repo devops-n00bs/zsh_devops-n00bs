@@ -36,22 +36,22 @@ check_status() {
 # Print dashboard
 if [ "$(id -u)" -eq 0 ]; then
     echo -e "  ${CYAN}[1] Zsh & Starship Configuration:${NC}"
-    echo -ne "      - Status        : "
+    echo -ne "      - Root          : "
     check_status "${ROOT_HOME}/.zshrc" true
     echo ""
 
     echo -e "  ${CYAN}[2] Vim & Neovim Configuration:${NC}"
-    echo -ne "      - Status        : "
+    echo -ne "      - Root          : "
     check_status "${ROOT_HOME}/.vimrc" true
     echo ""
 
     echo -e "  ${CYAN}[3] Tmux Configuration:${NC}"
-    echo -ne "      - Status        : "
+    echo -ne "      - Root          : "
     check_status "${ROOT_HOME}/.tmux.conf" true
     echo ""
 
     echo -e "  ${CYAN}[4] FZF (Fuzzy Finder):${NC}"
-    echo -ne "      - Status        : "
+    echo -ne "      - Root          : "
     if [ -f "${ROOT_HOME}/.local/bin/fzf" ] || [ -f "${ROOT_HOME}/.fzf/bin/fzf" ] || command -v fzf &> /dev/null; then
         echo -e "${GREEN}[INSTALLED]${NC}"
     else

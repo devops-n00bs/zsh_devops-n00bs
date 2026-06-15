@@ -54,6 +54,32 @@ detect_os() {
     fi
 }
 
+# Detect if the environment is Root-Only or Multi-User
+detect_user_env() {
+    if [ "$(id -u)" -ne 0 ]; then
+        echo "Multi-User Environment"
+        return
+    fi
+    
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "Multi-User Environment"
+        return
+    fi
+    
+    # Check if there are human users in /etc/passwd (UID >= 1000 and < 60000)
+    if [ -f /etc/passwd ]; then
+        local human_count
+        human_count=$(awk -F: '$3 >= 1000 && $3 < 60000 {print $1}' /etc/passwd 2>/dev/null | wc -l || echo 0)
+        if [ "$human_count" -eq 0 ]; then
+            echo "Root-Only Environment"
+        else
+            echo "Multi-User Environment"
+        fi
+    else
+        echo "Root-Only Environment"
+    fi
+}
+
 # Helper to check sudo status
 check_sudo() {
     if command -v sudo &> /dev/null; then
