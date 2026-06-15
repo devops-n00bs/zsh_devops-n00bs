@@ -21,9 +21,10 @@ error() { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
 success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
 
 # Resolve absolute paths
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." &>/dev/null && pwd)"
+_UTILS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+REPO_ROOT="$(cd "${_UTILS_DIR}/.." &>/dev/null && pwd)"
 export REPO_ROOT
+unset _UTILS_DIR
 
 # Resolve root home path
 ROOT_HOME="/root"

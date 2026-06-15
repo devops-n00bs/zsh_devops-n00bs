@@ -45,7 +45,7 @@ fi
 source "${SCRIPT_DIR}/scripts/utils.sh"
 
 # Constants
-VERSION="v1.4.1"
+VERSION="v1.4.2"
 
 # Main Menu Loop
 while true; do
