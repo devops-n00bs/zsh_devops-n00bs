@@ -16,6 +16,7 @@ info "=== STARTING FZF INSTALLATION ==="
 # Check if FZF is already installed
 if command -v fzf &> /dev/null; then
     success "FZF is already installed at $(command -v fzf)."
+    check_and_apply_to_root "fzf"
     exit 0
 fi
 
