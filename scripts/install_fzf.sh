@@ -26,31 +26,35 @@ if [ "$(id -u)" -ne 0 ]; then
     SUDO="sudo"
 fi
 
-# Attempt installation using package manager or fallback to Git clone
+# Attempt installation using package manager with a Git clone fallback on failure
+success_pkg=false
+set +e # temporarily disable exit-on-error to catch package manager failures
+
 if [[ "$OSTYPE" == "darwin"* ]]; then
     if command -v brew &> /dev/null; then
         info "Installing FZF via Homebrew..."
-        brew install fzf
-    else
-        error "Homebrew not found. Please install Homebrew first or install FZF manually."
+        brew install fzf && success_pkg=true
     fi
 elif [ -f /etc/debian_version ]; then
     info "Installing FZF via apt-get..."
-    $SUDO apt-get update
-    $SUDO apt-get install -y fzf
+    $SUDO apt-get update && $SUDO apt-get install -y fzf && success_pkg=true
 elif [ -f /etc/redhat-release ] || [ -f /etc/system-release ]; then
     info "Installing FZF via dnf/yum..."
     if command -v dnf &> /dev/null; then
-        $SUDO dnf install -y fzf
+        $SUDO dnf install -y fzf && success_pkg=true
     else
-        $SUDO yum install -y fzf
+        $SUDO yum install -y fzf && success_pkg=true
     fi
 elif [ -f /etc/arch-release ]; then
     info "Installing FZF via pacman..."
-    $SUDO pacman -S --noconfirm fzf
-else
-    # Fallback to official Git installer
-    info "No supported package manager found. Installing FZF via Git repository clone..."
+    $SUDO pacman -S --noconfirm fzf && success_pkg=true
+fi
+
+set -e # re-enable exit-on-error
+
+if [ "$success_pkg" = false ]; then
+    warn "Package manager installation failed or was blocked (e.g. apt lock). Falling back to Git repository clone..."
+    
     if [ -d "${HOME}/.fzf" ]; then
         info "Updating existing FZF clone..."
         git -C "${HOME}/.fzf" pull
