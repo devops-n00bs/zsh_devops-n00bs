@@ -23,6 +23,11 @@ A two-line prompt designed for maximum readability and zero-font capability:
 - Auto-completions are fully interactive, style-colored (matching terminal files), and support case-insensitive matching.
 - Tab completion menu navigation allows selecting folders using arrows.
 
+### E. FZF Fuzzy Search Integration (Optional Module)
+- **Fuzzy History Search (`Ctrl + R`)**: Replaces default history search with a powerful, interactive fuzzy search panel.
+- **Fuzzy File Lookup (`Ctrl + T`)**: Instantly browse and select files to paste into the active command line.
+- **Fuzzy Directory Navigation (`Alt + C`)**: Quick search and auto-cd into subdirectories.
+
 ---
 
 ## 2. Keyboard Shortcuts & Flow
@@ -35,6 +40,9 @@ A two-line prompt designed for maximum readability and zero-font capability:
 | **Ctrl + Right Arrow** | Accept suggestion word-by-word |
 | **Ctrl + Left / Right Arrow** | Jump cursor word-by-word |
 | **typing a directory name** | `autocd` (changes directory directly without needing `cd`) |
+| **Ctrl + R** (with FZF) | Open interactive fuzzy history search |
+| **Ctrl + T** (with FZF) | Open interactive fuzzy file selection |
+| **Alt + C** (with FZF) | Open interactive fuzzy directory navigation (auto-cd) |
 
 ---
 
