@@ -34,35 +34,61 @@ check_status() {
 }
 
 # Print dashboard
-echo -e "  ${CYAN}[1] Zsh & Starship Configuration:${NC}"
-echo -ne "      - User ($(whoami)) : "
-check_status "${HOME}/.zshrc" false
-echo -ne "      - Root          : "
-check_status "${ROOT_HOME}/.zshrc" true
-echo ""
+if [ "$(id -u)" -eq 0 ]; then
+    echo -e "  ${CYAN}[1] Zsh & Starship Configuration:${NC}"
+    echo -ne "      - Status        : "
+    check_status "${ROOT_HOME}/.zshrc" true
+    echo ""
 
-echo -e "  ${CYAN}[2] Vim & Neovim Configuration:${NC}"
-echo -ne "      - User ($(whoami)) : "
-check_status "${HOME}/.vimrc" false
-echo -ne "      - Root          : "
-check_status "${ROOT_HOME}/.vimrc" true
-echo ""
+    echo -e "  ${CYAN}[2] Vim & Neovim Configuration:${NC}"
+    echo -ne "      - Status        : "
+    check_status "${ROOT_HOME}/.vimrc" true
+    echo ""
 
-echo -e "  ${CYAN}[3] Tmux Configuration:${NC}"
-echo -ne "      - User ($(whoami)) : "
-check_status "${HOME}/.tmux.conf" false
-echo -ne "      - Root          : "
-check_status "${ROOT_HOME}/.tmux.conf" true
-echo ""
+    echo -e "  ${CYAN}[3] Tmux Configuration:${NC}"
+    echo -ne "      - Status        : "
+    check_status "${ROOT_HOME}/.tmux.conf" true
+    echo ""
 
-echo -e "  ${CYAN}[4] FZF (Fuzzy Finder):${NC}"
-echo -ne "      - User ($(whoami)) : "
-if command -v fzf &> /dev/null || [[ -f "${HOME}/.local/bin/fzf" ]]; then
-    echo -e "${GREEN}[INSTALLED]${NC}"
+    echo -e "  ${CYAN}[4] FZF (Fuzzy Finder):${NC}"
+    echo -ne "      - Status        : "
+    if command -v fzf &> /dev/null || [[ -f "${HOME}/.local/bin/fzf" ]]; then
+        echo -e "${GREEN}[INSTALLED]${NC}"
+    else
+        echo -e "${NC}[NOT INSTALLED]${NC}"
+    fi
+    echo ""
 else
-    echo -e "${NC}[NOT INSTALLED]${NC}"
+    echo -e "  ${CYAN}[1] Zsh & Starship Configuration:${NC}"
+    echo -ne "      - User ($(whoami)) : "
+    check_status "${HOME}/.zshrc" false
+    echo -ne "      - Root          : "
+    check_status "${ROOT_HOME}/.zshrc" true
+    echo ""
+
+    echo -e "  ${CYAN}[2] Vim & Neovim Configuration:${NC}"
+    echo -ne "      - User ($(whoami)) : "
+    check_status "${HOME}/.vimrc" false
+    echo -ne "      - Root          : "
+    check_status "${ROOT_HOME}/.vimrc" true
+    echo ""
+
+    echo -e "  ${CYAN}[3] Tmux Configuration:${NC}"
+    echo -ne "      - User ($(whoami)) : "
+    check_status "${HOME}/.tmux.conf" false
+    echo -ne "      - Root          : "
+    check_status "${ROOT_HOME}/.tmux.conf" true
+    echo ""
+
+    echo -e "  ${CYAN}[4] FZF (Fuzzy Finder):${NC}"
+    echo -ne "      - User ($(whoami)) : "
+    if command -v fzf &> /dev/null || [[ -f "${HOME}/.local/bin/fzf" ]]; then
+        echo -e "${GREEN}[INSTALLED]${NC}"
+    else
+        echo -e "${NC}[NOT INSTALLED]${NC}"
+    fi
+    echo ""
 fi
-echo ""
 
 echo -e "${PURPLE}=======================================================${NC}"
 echo -e "Please select an option to uninstall:"
@@ -272,8 +298,8 @@ case "$UNINSTALL_CHOICE" in
             fi
         fi
 
-        # Root Zsh cleanup if detected
-        if sudo [ -f "${ROOT_HOME}/.zshrc" ] || sudo [ -f "${ROOT_HOME}/.zshrc.bak" ] 2>/dev/null; then
+        # Root Zsh cleanup if detected (only if not already running as root)
+        if [ "$(id -u)" -ne 0 ] && (sudo [ -f "${ROOT_HOME}/.zshrc" ] || sudo [ -f "${ROOT_HOME}/.zshrc.bak" ] 2>/dev/null); then
             echo ""
             local RM_ROOT_ZSH
             read -r -p "Do you also want to remove Zsh configurations for 'root' user? (y/N): " RM_ROOT_ZSH < /dev/tty
@@ -309,8 +335,8 @@ case "$UNINSTALL_CHOICE" in
             rmdir "${HOME}/.config/nvim"
         fi
 
-        # Root Vim cleanup if detected
-        if sudo [ -f "${ROOT_HOME}/.vimrc" ] || sudo [ -f "${ROOT_HOME}/.vimrc.bak" ] 2>/dev/null; then
+        # Root Vim cleanup if detected (only if not already running as root)
+        if [ "$(id -u)" -ne 0 ] && (sudo [ -f "${ROOT_HOME}/.vimrc" ] || sudo [ -f "${ROOT_HOME}/.vimrc.bak" ] 2>/dev/null); then
             echo ""
             local RM_ROOT_VIM
             read -r -p "Do you also want to remove Vim configurations for 'root' user? (y/N): " RM_ROOT_VIM < /dev/tty
@@ -339,7 +365,8 @@ case "$UNINSTALL_CHOICE" in
             fresh_os_reset "${HOME}/.tmux.conf" false
         fi
         
-        if sudo [ -f "${ROOT_HOME}/.tmux.conf" ] || sudo [ -f "${ROOT_HOME}/.tmux.conf.bak" ] 2>/dev/null; then
+        # Root Tmux cleanup if detected (only if not already running as root)
+        if [ "$(id -u)" -ne 0 ] && (sudo [ -f "${ROOT_HOME}/.tmux.conf" ] || sudo [ -f "${ROOT_HOME}/.tmux.conf.bak" ] 2>/dev/null); then
             echo ""
             local RM_ROOT_TMUX
             read -r -p "Do you also want to remove Tmux configurations for 'root' user? (y/N): " RM_ROOT_TMUX < /dev/tty
@@ -406,12 +433,14 @@ case "$UNINSTALL_CHOICE" in
             fi
         fi
 
-        # Root check & cleanups
+        # Root check & cleanups (only if not already running as root)
         local HAS_ROOT_CONFIG=false
-        if sudo [ -f "${ROOT_HOME}/.zshrc" ] || sudo [ -f "${ROOT_HOME}/.zshrc.bak" ] || \
-           sudo [ -f "${ROOT_HOME}/.vimrc" ] || sudo [ -f "${ROOT_HOME}/.vimrc.bak" ] || \
-           sudo [ -f "${ROOT_HOME}/.tmux.conf" ] || sudo [ -f "${ROOT_HOME}/.tmux.conf.bak" ] 2>/dev/null; then
-            HAS_ROOT_CONFIG=true
+        if [ "$(id -u)" -ne 0 ]; then
+            if sudo [ -f "${ROOT_HOME}/.zshrc" ] || sudo [ -f "${ROOT_HOME}/.zshrc.bak" ] || \
+               sudo [ -f "${ROOT_HOME}/.vimrc" ] || sudo [ -f "${ROOT_HOME}/.vimrc.bak" ] || \
+               sudo [ -f "${ROOT_HOME}/.tmux.conf" ] || sudo [ -f "${ROOT_HOME}/.tmux.conf.bak" ] 2>/dev/null; then
+                HAS_ROOT_CONFIG=true
+            fi
         fi
 
         if [ "$HAS_ROOT_CONFIG" = true ]; then

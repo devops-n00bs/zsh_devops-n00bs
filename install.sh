@@ -45,7 +45,7 @@ fi
 source "${SCRIPT_DIR}/scripts/utils.sh"
 
 # Constants
-VERSION="v1.4.7"
+VERSION="v1.4.8"
 
 # Main Menu Loop
 while true; do
@@ -58,14 +58,20 @@ while true; do
     CPU_ARCH=$(uname -m 2>/dev/null || echo "unknown")
 
     # Retrieve Module Status Labels
-    ZSH_USER_STATUS=$(get_status_label "${HOME}/.zshrc" false)
-    ZSH_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.zshrc" true)
+    if [ "$(id -u)" -eq 0 ]; then
+        ZSH_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.zshrc" true)
+        VIM_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.vimrc" true)
+        TMUX_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.tmux.conf" true)
+    else
+        ZSH_USER_STATUS=$(get_status_label "${HOME}/.zshrc" false)
+        ZSH_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.zshrc" true)
 
-    VIM_USER_STATUS=$(get_status_label "${HOME}/.vimrc" false)
-    VIM_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.vimrc" true)
+        VIM_USER_STATUS=$(get_status_label "${HOME}/.vimrc" false)
+        VIM_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.vimrc" true)
 
-    TMUX_USER_STATUS=$(get_status_label "${HOME}/.tmux.conf" false)
-    TMUX_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.tmux.conf" true)
+        TMUX_USER_STATUS=$(get_status_label "${HOME}/.tmux.conf" false)
+        TMUX_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.tmux.conf" true)
+    fi
 
     if [ -f "${HOME}/.local/bin/fzf" ] || command -v fzf >/dev/null 2>&1; then
         FZF_STATUS="${GREEN}[INSTALLED]${NC}"
@@ -90,10 +96,17 @@ while true; do
     echo -e "   * Current Shell    : ${YELLOW}${CURRENT_SHELL}${NC}"
     echo -e "${BLUE}================================================================================${NC}"
     echo -e "${YELLOW} MODULE STATUS:${NC}"
-    echo -e "   [1] Zsh Shell & Starship Prompt  : User: ${ZSH_USER_STATUS} / Root: ${ZSH_ROOT_STATUS}"
-    echo -e "   [2] Vim & Neovim Configurations  : User: ${VIM_USER_STATUS} / Root: ${VIM_ROOT_STATUS}"
-    echo -e "   [3] Tmux Premium Layout          : User: ${TMUX_USER_STATUS} / Root: ${TMUX_ROOT_STATUS}"
-    echo -e "   [4] FZF (Fuzzy Finder) Module    : User: ${FZF_STATUS}"
+    if [ "$(id -u)" -eq 0 ]; then
+        echo -e "   [1] Zsh Shell & Starship Prompt  : ${ZSH_ROOT_STATUS}"
+        echo -e "   [2] Vim & Neovim Configurations  : ${VIM_ROOT_STATUS}"
+        echo -e "   [3] Tmux Premium Layout          : ${TMUX_ROOT_STATUS}"
+        echo -e "   [4] FZF (Fuzzy Finder) Module    : ${FZF_STATUS}"
+    else
+        echo -e "   [1] Zsh Shell & Starship Prompt  : User: ${ZSH_USER_STATUS} / Root: ${ZSH_ROOT_STATUS}"
+        echo -e "   [2] Vim & Neovim Configurations  : User: ${VIM_USER_STATUS} / Root: ${VIM_ROOT_STATUS}"
+        echo -e "   [3] Tmux Premium Layout          : User: ${TMUX_USER_STATUS} / Root: ${TMUX_ROOT_STATUS}"
+        echo -e "   [4] FZF (Fuzzy Finder) Module    : User: ${FZF_STATUS}"
+    fi
     echo -e "${BLUE}================================================================================${NC}"
     echo -e "${YELLOW} ABOUT THIS SUITE:${NC}"
     echo -e "   Automates deployment of a high-performance, keyboard-driven terminal environment."
