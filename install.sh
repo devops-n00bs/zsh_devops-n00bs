@@ -45,7 +45,7 @@ fi
 source "${SCRIPT_DIR}/scripts/utils.sh"
 
 # Constants
-VERSION="v1.4.6"
+VERSION="v1.4.7"
 
 # Main Menu Loop
 while true; do
@@ -67,11 +67,10 @@ while true; do
     TMUX_USER_STATUS=$(get_status_label "${HOME}/.tmux.conf" false)
     TMUX_ROOT_STATUS=$(get_status_label "${ROOT_HOME}/.tmux.conf" true)
 
-    FZF_STATUS=$(get_status_label "${HOME}/.local/bin/fzf" false)
-    if ! [[ "$FZF_STATUS" =~ "INSTALLED" ]]; then
-        if command -v fzf &>/dev/null; then
-            FZF_STATUS="${GREEN}[INSTALLED]${NC}"
-        fi
+    if [ -f "${HOME}/.local/bin/fzf" ] || command -v fzf >/dev/null 2>&1; then
+        FZF_STATUS="${GREEN}[INSTALLED]${NC}"
+    else
+        FZF_STATUS="${RED}[NOT INSTALLED]${NC}"
     fi
 
     # Print Title ASCII Art
