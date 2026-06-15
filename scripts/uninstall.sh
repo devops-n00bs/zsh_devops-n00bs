@@ -303,7 +303,7 @@ case "$UNINSTALL_CHOICE" in
             fi
             if command -v bash &> /dev/null && [ "$check_shell" = "zsh" ]; then
                 info "Reverting default shell back to bash..."
-                chsh -s "$(which bash)" < /dev/tty 2>/dev/null || true
+                chsh -s "$(which bash)" < /dev/tty || true
             fi
         fi
 
@@ -453,7 +453,7 @@ case "$UNINSTALL_CHOICE" in
                 check_shell=$(basename "$SHELL")
             fi
             if command -v bash &> /dev/null && [ "$check_shell" = "zsh" ]; then
-                chsh -s "$(which bash)" < /dev/tty 2>/dev/null || true
+                chsh -s "$(which bash)" < /dev/tty || true
             fi
         fi
 
