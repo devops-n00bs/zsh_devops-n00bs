@@ -393,6 +393,18 @@ case "$UNINSTALL_CHOICE" in
         echo ""
         info "=== UNINSTALLING FZF (FUZZY FINDER) ==="
         do_uninstall_fzf
+        
+        # Root FZF cleanup if detected (only if not already running as root)
+        if [ "$(id -u)" -ne 0 ] && (sudo [ -d "${ROOT_HOME}/.fzf" ] || sudo [ -f "${ROOT_HOME}/.local/bin/fzf" ] 2>/dev/null); then
+            echo ""
+            RM_ROOT_FZF=""
+            read -r -p "Do you also want to remove FZF configurations for 'root' user? (y/N): " RM_ROOT_FZF < /dev/tty
+            if [[ "$RM_ROOT_FZF" =~ ^[Yy]$ ]]; then
+                sudo rm -rf "${ROOT_HOME}/.fzf"
+                sudo rm -f "${ROOT_HOME}/.local/bin/fzf"
+                success "Root FZF cleanup complete!"
+            fi
+        fi
         echo -e "\n${GREEN}FZF uninstalled successfully!${NC}\n"
         ;;
     5)
@@ -450,7 +462,8 @@ case "$UNINSTALL_CHOICE" in
         if [ "$(id -u)" -ne 0 ]; then
             if sudo [ -f "${ROOT_HOME}/.zshrc" ] || sudo [ -f "${ROOT_HOME}/.zshrc.bak" ] || \
                sudo [ -f "${ROOT_HOME}/.vimrc" ] || sudo [ -f "${ROOT_HOME}/.vimrc.bak" ] || \
-               sudo [ -f "${ROOT_HOME}/.tmux.conf" ] || sudo [ -f "${ROOT_HOME}/.tmux.conf.bak" ] 2>/dev/null; then
+               sudo [ -f "${ROOT_HOME}/.tmux.conf" ] || sudo [ -f "${ROOT_HOME}/.tmux.conf.bak" ] || \
+               sudo [ -d "${ROOT_HOME}/.fzf" ] || sudo [ -f "${ROOT_HOME}/.local/bin/fzf" ] 2>/dev/null; then
                 HAS_ROOT_CONFIG=true
             fi
         fi
@@ -478,6 +491,8 @@ case "$UNINSTALL_CHOICE" in
                     sudo rmdir "${ROOT_HOME}/.config/nvim"
                 fi
                 sudo rm -rf "${ROOT_HOME}/.zsh"
+                sudo rm -rf "${ROOT_HOME}/.fzf"
+                sudo rm -f "${ROOT_HOME}/.local/bin/fzf"
                 sudo chsh -s /bin/bash root 2>/dev/null || true
                 clean_bashrc true
                 success "Root cleanup complete!"

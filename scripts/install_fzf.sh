@@ -76,6 +76,8 @@ fi
 # Verify installation success
 if command -v fzf &> /dev/null || [[ -f "${HOME}/.local/bin/fzf" ]]; then
     success "FZF successfully installed!"
+    # Apply to root if requested
+    check_and_apply_to_root "fzf"
 else
     error "FZF installation completed, but binary was not found in PATH."
 fi

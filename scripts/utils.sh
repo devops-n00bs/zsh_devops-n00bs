@@ -189,6 +189,18 @@ EOF"
             backup_root_file "${ROOT_HOME}/.tmux.conf"
             $SUDO cp "${HOME}/.tmux.conf" "${ROOT_HOME}/.tmux.conf"
             success "Tmux configuration applied to 'root' user!"
+        elif [ "$module" = "fzf" ]; then
+            # 1. Copy FZF git clone or local binary to root if exists
+            if [ -d "${HOME}/.fzf" ]; then
+                $SUDO rm -rf "${ROOT_HOME}/.fzf"
+                $SUDO cp -r "${HOME}/.fzf" "${ROOT_HOME}/.fzf"
+                $SUDO mkdir -p "${ROOT_HOME}/.local/bin"
+                $SUDO ln -sf "${ROOT_HOME}/.fzf/bin/fzf" "${ROOT_HOME}/.local/bin/fzf"
+            elif [ -f "${HOME}/.local/bin/fzf" ]; then
+                $SUDO mkdir -p "${ROOT_HOME}/.local/bin"
+                $SUDO cp "${HOME}/.local/bin/fzf" "${ROOT_HOME}/.local/bin/fzf"
+            fi
+            success "FZF configuration applied to 'root' user!"
         fi
     fi
 }
