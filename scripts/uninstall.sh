@@ -298,7 +298,11 @@ case "$UNINSTALL_CHOICE" in
 
         # Revert default shell to bash for user
         if [[ "$OSTYPE" != "darwin"* ]]; then
-            if command -v bash &> /dev/null && [ "$(basename "${SHELL:-}")" = "zsh" ]; then
+            local check_shell="unknown"
+            if [ -n "${SHELL:-}" ]; then
+                check_shell=$(basename "$SHELL")
+            fi
+            if command -v bash &> /dev/null && [ "$check_shell" = "zsh" ]; then
                 info "Reverting default shell back to bash..."
                 chsh -s "$(which bash)" < /dev/tty 2>/dev/null || true
             fi
@@ -434,7 +438,11 @@ case "$UNINSTALL_CHOICE" in
         clean_bashrc false
 
         if [[ "$OSTYPE" != "darwin"* ]]; then
-            if command -v bash &> /dev/null && [ "$(basename "${SHELL:-}")" = "zsh" ]; then
+            local check_shell="unknown"
+            if [ -n "${SHELL:-}" ]; then
+                check_shell=$(basename "$SHELL")
+            fi
+            if command -v bash &> /dev/null && [ "$check_shell" = "zsh" ]; then
                 chsh -s "$(which bash)" < /dev/tty 2>/dev/null || true
             fi
         fi

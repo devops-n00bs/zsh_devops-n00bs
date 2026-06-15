@@ -144,27 +144,42 @@ while true; do
 
     case "$CHOICE" in
         1)
-            bash "${SCRIPT_DIR}/scripts/install_zsh.sh"
+            if ! bash "${SCRIPT_DIR}/scripts/install_zsh.sh"; then
+                warn "Zsh & Starship installation encountered an error."
+            fi
             ;;
         2)
-            bash "${SCRIPT_DIR}/scripts/install_vim.sh"
+            if ! bash "${SCRIPT_DIR}/scripts/install_vim.sh"; then
+                warn "Vim/Neovim installation encountered an error."
+            fi
             ;;
         3)
-            bash "${SCRIPT_DIR}/scripts/install_tmux.sh"
+            if ! bash "${SCRIPT_DIR}/scripts/install_tmux.sh"; then
+                warn "Tmux installation encountered an error."
+            fi
             ;;
         4)
-            bash "${SCRIPT_DIR}/scripts/install_fzf.sh"
+            if ! bash "${SCRIPT_DIR}/scripts/install_fzf.sh"; then
+                warn "FZF installation encountered an error."
+            fi
             ;;
         5)
             info "=== STARTING FULL INSTALLATION (ALL MODULES) ==="
-            bash "${SCRIPT_DIR}/scripts/install_zsh.sh"
-            bash "${SCRIPT_DIR}/scripts/install_vim.sh"
-            bash "${SCRIPT_DIR}/scripts/install_tmux.sh"
-            bash "${SCRIPT_DIR}/scripts/install_fzf.sh"
-            success "All modules successfully installed!"
+            local err=0
+            bash "${SCRIPT_DIR}/scripts/install_zsh.sh" || err=1
+            bash "${SCRIPT_DIR}/scripts/install_vim.sh" || err=1
+            bash "${SCRIPT_DIR}/scripts/install_tmux.sh" || err=1
+            bash "${SCRIPT_DIR}/scripts/install_fzf.sh" || err=1
+            if [ $err -eq 0 ]; then
+                success "All modules successfully installed!"
+            else
+                warn "One or more modules encountered an error during installation."
+            fi
             ;;
         6)
-            bash "${SCRIPT_DIR}/scripts/uninstall.sh"
+            if ! bash "${SCRIPT_DIR}/scripts/uninstall.sh"; then
+                warn "Uninstallation encountered an error."
+            fi
             ;;
         7)
             info "Exiting setup manager. Goodbye!"

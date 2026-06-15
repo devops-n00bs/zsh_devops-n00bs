@@ -138,7 +138,11 @@ setup_plugin() {
     
     if [ -d "$path" ]; then
         info "Updating plugin ${name}..."
-        git -C "$path" pull
+        git -C "$path" pull || {
+            warn "Failed to update ${name} via git pull. Re-cloning..."
+            rm -rf "$path"
+            git clone --depth 1 "$url" "$path"
+        }
     else
         info "Downloading plugin ${name}..."
         git clone --depth 1 "$url" "$path"
@@ -173,7 +177,10 @@ success "Copied starship.toml to ~/.config/starship.toml"
 success "Zsh and Starship configurations successfully applied!"
 
 # 5. Set default shell to Zsh
-CURRENT_SHELL=$(basename "${SHELL:-}")
+CURRENT_SHELL="unknown"
+if [ -n "${SHELL:-}" ]; then
+    CURRENT_SHELL=$(basename "$SHELL")
+fi
 if [ "$CURRENT_SHELL" != "zsh" ]; then
     info "Attempting to change your default shell to Zsh..."
     if command -v chsh &> /dev/null; then
