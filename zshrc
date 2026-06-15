@@ -45,6 +45,9 @@ zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:
 # Use emacs keybindings by default (even if EDITOR is set to vi)
 bindkey -e
 
+# Auto CD: typing a directory name directly will cd into it
+setopt autocd
+
 # Up/Down arrow search history based on prefix
 autoload -U up-line-or-beginning-search
 autoload -U down-line-or-beginning-search
@@ -120,4 +123,37 @@ else
     alias ll="ls -lAh --color=auto"
     alias la="ls -A --color=auto"
     alias l="ls -lh --color=auto"
+fi
+
+# ------------------------------------------------------------------------------
+# 7. FZF (Fuzzy Finder) Integration
+# ------------------------------------------------------------------------------
+if command -v fzf &> /dev/null || [[ -f "${HOME}/.local/bin/fzf" ]]; then
+    # Ensure ~/.local/bin is in PATH if fzf was installed there
+    if [[ -d "${HOME}/.local/bin" ]] && [[ ":$PATH:" != *":${HOME}/.local/bin:"* ]]; then
+        export PATH="${HOME}/.local/bin:$PATH"
+    fi
+
+    # Initialize fzf integration if supported by the installed version (0.48.0+)
+    eval "$(fzf --zsh)" 2>/dev/null || {
+        # Fallback for older fzf versions
+        # Locate and source fzf completion & key-bindings files dynamically
+        local fzf_paths=(
+            "/usr/share/doc/fzf/examples/key-bindings.zsh"
+            "/usr/share/doc/fzf/examples/completion.zsh"
+            "/usr/share/fzf/key-bindings.zsh"
+            "/usr/share/fzf/completion.zsh"
+            "/usr/local/opt/fzf/shell/key-bindings.zsh"
+            "/usr/local/opt/fzf/shell/completion.zsh"
+            "/opt/homebrew/opt/fzf/shell/key-bindings.zsh"
+            "/opt/homebrew/opt/fzf/shell/completion.zsh"
+            "${HOME}/.fzf/shell/key-bindings.zsh"
+            "${HOME}/.fzf/shell/completion.zsh"
+        )
+        for fzf_file in "${fzf_paths[@]}"; do
+            if [[ -f "$fzf_file" ]]; then
+                source "$fzf_file"
+            fi
+        done
+    }
 fi
